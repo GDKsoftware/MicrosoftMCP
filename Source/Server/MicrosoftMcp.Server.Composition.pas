@@ -7,6 +7,7 @@ uses
   MCPAuth.Store.FireDAC.Interfaces,
   MCPAuth.Store.FireDAC.PgDriver,
   MCPAuth.Client.UpstreamAccounts.Interfaces,
+  MicrosoftMcp.Mailbox.Interfaces,
   MicrosoftMcp.Server.Settings;
 
 type
@@ -18,14 +19,17 @@ type
     FSettings: TServerSettings;
     FPgDriver: TFireDACPgDriver;
     FConnectionFactory: IFireDACConnectionFactory;
+    FMailboxes: IMailboxRepository;
     FAccounts: IUpstreamAccounts;
     FHost: TMCPServerHost;
     FIsRunning: Boolean;
 
     class function WithDatabaseTimeouts(const ConnectionString: string): string; static;
+    class function WithUtf8(const ConnectionString: string): string; static;
 
     procedure BuildDatabase;
     procedure BuildPostgresDatabase;
+    procedure BuildMailboxStore;
     procedure BuildAccounts;
     procedure RegisterTools;
     procedure BuildHost;
@@ -52,7 +56,9 @@ uses
   MCPAuth.Client,
   MCPAuth.Client.UpstreamAccounts,
   MCPAuth.Store.FireDAC.ConnectionFactory,
-  MCPAuth.Store.FireDAC.Migrations;
+  MCPAuth.Store.FireDAC.Migrations,
+  MicrosoftMcp.Mailbox.Store.Memory,
+  MicrosoftMcp.Mailbox.Store.FireDAC;
 
 const
   LoopbackAddress = '127.0.0.1';
@@ -64,6 +70,8 @@ const
   // Without these a query that waits on a lock or a stuck connection would hold a request thread forever.
   DatabaseTimeouts = 'PGAdvanced=options=-c statement_timeout=30000 -c lock_timeout=10000';
   ParamSeparator = ';';
+  CharacterSetParameter = 'CharacterSet=';
+  Utf8CharacterSet = 'CharacterSet=UTF8';
 
 resourcestring
   StartedFormat = 'MicrosoftMCP started: resource %s on %s:%d, tokens from %s, store %s';
@@ -82,6 +90,16 @@ begin
   Result := Format('%s%s%s', [TrimmedConnectionString, ParamSeparator, DatabaseTimeouts]);
 end;
 
+class function TServerComposition.WithUtf8(const ConnectionString: string): string;
+begin
+  const HasOwnCharacterSet = ContainsText(ConnectionString, CharacterSetParameter);
+  if HasOwnCharacterSet then
+    Exit(ConnectionString);
+
+  const TrimmedConnectionString = ConnectionString.TrimRight([ParamSeparator]);
+  Result := Format('%s%s%s', [TrimmedConnectionString, ParamSeparator, Utf8CharacterSet]);
+end;
+
 constructor TServerComposition.Create(const Settings: TServerSettings);
 begin
   inherited Create;
@@ -95,6 +113,7 @@ begin
 
   FHost.Free;
   FAccounts := nil;
+  FMailboxes := nil;
   FConnectionFactory := nil;
   FPgDriver.Free;
 
@@ -109,6 +128,7 @@ begin
   if not Assigned(FHost) then
   begin
     BuildDatabase;
+    BuildMailboxStore;
     BuildAccounts;
     RegisterTools;
     BuildHost;
@@ -130,9 +150,18 @@ procedure TServerComposition.BuildPostgresDatabase;
 begin
   FPgDriver := TFireDACPgDriver.Create;
 
-  const ConnectionString = WithDatabaseTimeouts(FSettings.DatabaseConnection);
+  const ConnectionString = WithUtf8(WithDatabaseTimeouts(FSettings.DatabaseConnection));
   FConnectionFactory := TFireDACConnectionFactory.Create(ConnectionString);
   TFireDACMigrations.Apply(FConnectionFactory, PostgresDialect, FSettings.MigrationsPath, SchemaVersionTable);
+end;
+
+procedure TServerComposition.BuildMailboxStore;
+begin
+  const UsesPostgres = (FSettings.Store = TServerStoreKind.Postgres);
+  if UsesPostgres then
+    FMailboxes := TMailboxStoreFireDAC.Create(FConnectionFactory)
+  else
+    FMailboxes := TMailboxStoreMemory.Create;
 end;
 
 procedure TServerComposition.BuildAccounts;

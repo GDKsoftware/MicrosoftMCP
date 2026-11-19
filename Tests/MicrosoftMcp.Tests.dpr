@@ -9,7 +9,12 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.XML.NUnit,
   MicrosoftMcp.Server.Settings.Tests in 'MicrosoftMcp.Server.Settings.Tests.pas',
-  MicrosoftMcp.Server.Composition.Tests in 'MicrosoftMcp.Server.Composition.Tests.pas';
+  MicrosoftMcp.Server.Composition.Tests in 'MicrosoftMcp.Server.Composition.Tests.pas',
+  MicrosoftMcp.Mailbox.Slug.Tests in 'MicrosoftMcp.Mailbox.Slug.Tests.pas',
+  MicrosoftMcp.Mailbox.Store.Contract.Tests in 'MicrosoftMcp.Mailbox.Store.Contract.Tests.pas',
+  MicrosoftMcp.Mailbox.Store.Memory.Tests in 'MicrosoftMcp.Mailbox.Store.Memory.Tests.pas',
+  MicrosoftMcp.Tests.Postgres in 'MicrosoftMcp.Tests.Postgres.pas',
+  MicrosoftMcp.Mailbox.Store.FireDAC.Tests in 'MicrosoftMcp.Mailbox.Store.FireDAC.Tests.pas';
 
 begin
   ReportMemoryLeaksOnShutdown := True;
