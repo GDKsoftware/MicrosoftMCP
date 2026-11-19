@@ -14,7 +14,11 @@ uses
   MicrosoftMcp.Mailbox.Store.Contract.Tests in 'MicrosoftMcp.Mailbox.Store.Contract.Tests.pas',
   MicrosoftMcp.Mailbox.Store.Memory.Tests in 'MicrosoftMcp.Mailbox.Store.Memory.Tests.pas',
   MicrosoftMcp.Tests.Postgres in 'MicrosoftMcp.Tests.Postgres.pas',
-  MicrosoftMcp.Mailbox.Store.FireDAC.Tests in 'MicrosoftMcp.Mailbox.Store.FireDAC.Tests.pas';
+  MicrosoftMcp.Mailbox.Store.FireDAC.Tests in 'MicrosoftMcp.Mailbox.Store.FireDAC.Tests.pas',
+  MicrosoftMcp.Fakes.UpstreamAccounts in 'MicrosoftMcp.Fakes.UpstreamAccounts.pas',
+  MicrosoftMcp.Fakes.GraphTransport in 'MicrosoftMcp.Fakes.GraphTransport.pas',
+  MicrosoftMcp.Mailbox.Resolver.Tests in 'MicrosoftMcp.Mailbox.Resolver.Tests.pas',
+  MicrosoftMcp.Graph.Errors.Tests in 'MicrosoftMcp.Graph.Errors.Tests.pas';
 
 begin
   ReportMemoryLeaksOnShutdown := True;
