@@ -9,6 +9,7 @@ uses
   MicrosoftMcp.Graph.ClientFactory.Interfaces;
 
 type
+  // Every client gets a TRaisingGraphTransport, so an HTTP error of Graph raises EGraphHttpError.
   TGraphClientFactory = class(TInterfacedObject, IGraphClientFactory)
   private
     FTransport: IGraphHttpTransport;
@@ -24,29 +25,27 @@ type
 implementation
 
 uses
-  MicrosoftMcp.Mailbox.Types;
+  MSGraph.Graph.Http.Transport,
+  MicrosoftMcp.Mailbox.Types,
+  MicrosoftMcp.Graph.Transport.Raising;
 
 { TGraphClientFactory }
 
 constructor TGraphClientFactory.Create;
 begin
-  inherited Create;
+  Create(TNetHttpTransport.Create);
 end;
 
 constructor TGraphClientFactory.Create(const Transport: IGraphHttpTransport);
 begin
   inherited Create;
 
-  FTransport := Transport;
+  FTransport := TRaisingGraphTransport.Create(Transport);
 end;
 
 function TGraphClientFactory.CreateClient(const Resolved: TResolvedMailbox): TGraphHttpClient;
 begin
-  const HasTransport = Assigned(FTransport);
-  if HasTransport then
-    Result := TGraphHttpClient.Create(Resolved.AccessToken, FTransport)
-  else
-    Result := TGraphHttpClient.Create(Resolved.AccessToken);
+  Result := TGraphHttpClient.Create(Resolved.AccessToken, FTransport);
 
   const IsShared = (Resolved.Mailbox.Kind = TMailboxKind.Shared);
   if IsShared then

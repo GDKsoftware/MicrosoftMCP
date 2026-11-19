@@ -12,8 +12,9 @@ type
   // Turns the ways Microsoft365-4D reports a failure into one English message for Claude.
   // The message never contains tokens or the text Graph returned, because that can hold mail content.
   //
-  // TGraphHttpClient does not raise for an HTTP error: Get, Post, Patch and Delete return a JSON object
-  // {"error": "Microsoft Graph API error (HTTP 403): ..."} and PostRaw returns the response, so there are three entry points.
+  // Clients from TGraphClientFactory raise EGraphHttpError, which Translate handles. A bare TGraphHttpClient does not
+  // raise for an HTTP error: Get, Post, Patch and Delete return a JSON object {"error": "Microsoft Graph API error (HTTP 403): ..."}
+  // and PostRaw returns the response, hence the two other entry points.
   TGraphErrorTranslator = class
   private
     FAccountPageUrl: string;
@@ -40,7 +41,8 @@ implementation
 uses
   System.Net.URLClient,
   MSGraph.OAuth2.Types,
-  MicrosoftMcp.Mailbox.Exceptions;
+  MicrosoftMcp.Mailbox.Exceptions,
+  MicrosoftMcp.Graph.Exceptions;
 
 const
   ErrorMember = 'error';
@@ -82,6 +84,12 @@ function TGraphErrorTranslator.Translate(const E: Exception; const Mailbox: TMai
 begin
   if E is EMailboxError then
     Exit(E.Message);
+
+  if E is EGraphHttpError then
+  begin
+    const HttpError = EGraphHttpError(E);
+    Exit(DescribeStatus(HttpError.StatusCode, HttpError.RetryAfterSeconds, Mailbox));
+  end;
 
   if E is EGraphApiException then
   begin

@@ -8,6 +8,7 @@ uses
   MCPAuth.Store.FireDAC.PgDriver,
   MCPAuth.Client.UpstreamAccounts.Interfaces,
   MicrosoftMcp.Mailbox.Interfaces,
+  MicrosoftMcp.Tools.Services.Interfaces,
   MicrosoftMcp.Server.Settings;
 
 type
@@ -21,6 +22,7 @@ type
     FConnectionFactory: IFireDACConnectionFactory;
     FMailboxes: IMailboxRepository;
     FAccounts: IUpstreamAccounts;
+    FToolServices: IToolServices;
     FHost: TMCPServerHost;
     FIsRunning: Boolean;
 
@@ -31,7 +33,9 @@ type
     procedure BuildPostgresDatabase;
     procedure BuildMailboxStore;
     procedure BuildAccounts;
+    procedure BuildToolServices;
     procedure RegisterTools;
+    procedure RegisterMailboxTools;
     procedure BuildHost;
     procedure LogStarted;
 
@@ -53,12 +57,24 @@ uses
   System.SysUtils,
   System.StrUtils,
   MCPServer.Logger,
+  MCPServer.Tool.Base,
+  MCPServer.Registration,
+  MCPAuth.Clock,
+  MCPAuth.Secret.Token,
   MCPAuth.Client,
   MCPAuth.Client.UpstreamAccounts,
   MCPAuth.Store.FireDAC.ConnectionFactory,
   MCPAuth.Store.FireDAC.Migrations,
   MicrosoftMcp.Mailbox.Store.Memory,
-  MicrosoftMcp.Mailbox.Store.FireDAC;
+  MicrosoftMcp.Mailbox.Store.FireDAC,
+  MicrosoftMcp.Graph.ClientFactory,
+  MicrosoftMcp.Confirm.Memory,
+  MicrosoftMcp.Tools.Services,
+  MicrosoftMcp.Tools.Mailbox.ListAccounts,
+  MicrosoftMcp.Tools.Mailbox.List,
+  MicrosoftMcp.Tools.Mailbox.Add,
+  MicrosoftMcp.Tools.Mailbox.Rename,
+  MicrosoftMcp.Tools.Mailbox.Remove;
 
 const
   LoopbackAddress = '127.0.0.1';
@@ -112,6 +128,7 @@ begin
   Stop;
 
   FHost.Free;
+  FToolServices := nil;
   FAccounts := nil;
   FMailboxes := nil;
   FConnectionFactory := nil;
@@ -130,6 +147,7 @@ begin
     BuildDatabase;
     BuildMailboxStore;
     BuildAccounts;
+    BuildToolServices;
     RegisterTools;
     BuildHost;
   end;
@@ -169,10 +187,55 @@ begin
   FAccounts := TRemoteUpstreamAccounts.Create(FSettings.AuthInternalUrl, FSettings.ServiceId, FSettings.ServiceSecret);
 end;
 
+procedure TServerComposition.BuildToolServices;
+begin
+  const AccountPageUrl = TMCPAuthClient.AccountPageUrl(FSettings.AuthIssuer);
+  const Confirmations = TConfirmationsMemory.Create(TTokenGenerator.Create, TSystemClock.Create);
+
+  FToolServices := TToolServices.Create(FMailboxes, FAccounts, TGraphClientFactory.Create, Confirmations, AccountPageUrl);
+end;
+
 procedure TServerComposition.RegisterTools;
 begin
   // The host copies the tools of the global registry when it builds its managers, so every
   // TMCPRegistry.RegisterTool call belongs here, before BuildHost.
+  RegisterMailboxTools;
+end;
+
+procedure TServerComposition.RegisterMailboxTools;
+begin
+  // The closures capture the services, never Self: the global registry outlives this composition.
+  const Services = FToolServices;
+
+  TMCPRegistry.RegisterTool(TListAccountsTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TListAccountsTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TListMailboxesTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TListMailboxesTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailboxAddTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailboxAddTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailboxRenameTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailboxRenameTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailboxRemoveTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailboxRemoveTool.Create(Services);
+    end);
 end;
 
 procedure TServerComposition.BuildHost;

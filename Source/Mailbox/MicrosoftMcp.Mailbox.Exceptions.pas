@@ -15,6 +15,9 @@ type
   EMailboxAccountUnlinked = class(EMailboxError);
   EMailboxNeedsReconnect = class(EMailboxError);
   EMailboxAccessForbidden = class(EMailboxError);
+  EMailboxNotAccessible = class(EMailboxError);
+  EMailboxAccountUnknown = class(EMailboxError);
+  EMailboxInvalidInput = class(EMailboxError);
 
 implementation
 

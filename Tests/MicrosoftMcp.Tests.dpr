@@ -18,7 +18,13 @@ uses
   MicrosoftMcp.Fakes.UpstreamAccounts in 'MicrosoftMcp.Fakes.UpstreamAccounts.pas',
   MicrosoftMcp.Fakes.GraphTransport in 'MicrosoftMcp.Fakes.GraphTransport.pas',
   MicrosoftMcp.Mailbox.Resolver.Tests in 'MicrosoftMcp.Mailbox.Resolver.Tests.pas',
-  MicrosoftMcp.Graph.Errors.Tests in 'MicrosoftMcp.Graph.Errors.Tests.pas';
+  MicrosoftMcp.Graph.Errors.Tests in 'MicrosoftMcp.Graph.Errors.Tests.pas',
+  MicrosoftMcp.Graph.Transport.Raising.Tests in 'MicrosoftMcp.Graph.Transport.Raising.Tests.pas',
+  MicrosoftMcp.Fakes.Clock in 'MicrosoftMcp.Fakes.Clock.pas',
+  MicrosoftMcp.Tests.ToolCall in 'MicrosoftMcp.Tests.ToolCall.pas',
+  MicrosoftMcp.Confirm.Memory.Tests in 'MicrosoftMcp.Confirm.Memory.Tests.pas',
+  MicrosoftMcp.Tools.Base.Tests in 'MicrosoftMcp.Tools.Base.Tests.pas',
+  MicrosoftMcp.Tools.Mailbox.Tests in 'MicrosoftMcp.Tools.Mailbox.Tests.pas';
 
 begin
   ReportMemoryLeaksOnShutdown := True;
