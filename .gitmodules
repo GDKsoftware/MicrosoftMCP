@@ -1,0 +1,15 @@
+[submodule "lib/mcpserver"]
+	path = lib/mcpserver
+	url = https://github.com/GDKsoftware/Delphi-MCP-Server.git
+[submodule "lib/mcpauth4d"]
+	path = lib/mcpauth4d
+	url = https://github.com/GDKsoftware/MCPAuth4D.git
+[submodule "lib/microsoft365-4d"]
+	path = lib/microsoft365-4d
+	url = https://github.com/GDKsoftware/Microsoft365-4D.git
+[submodule "lib/spring4d"]
+	path = lib/spring4d
+	url = https://bitbucket.org/sglienke/spring4d.git
+[submodule "lib/taurustls"]
+	path = lib/taurustls
+	url = https://github.com/JPeterMugaas/TaurusTLS.git

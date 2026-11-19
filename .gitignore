@@ -1,0 +1,24 @@
+# Build output
+bin/
+dcu/
+*.dcu
+*.o
+*.exe
+*.dll
+*.so
+*.map
+*.drc
+*.rsm
+
+# IDE state
+__history/
+__recovery/
+*.local
+*.identcache
+*.dsk
+*.stat
+*.tvsconfig
+*.dproj.local
+
+# Machine-specific build settings
+build/env.local.ps1
