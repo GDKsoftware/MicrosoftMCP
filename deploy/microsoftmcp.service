@@ -1,0 +1,24 @@
+[Unit]
+Description=MicrosoftMCP server
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=microsoftmcp
+Group=microsoftmcp
+WorkingDirectory=/opt/microsoftmcp
+EnvironmentFile=/etc/microsoftmcp/microsoftmcp.env
+ExecStart=/opt/microsoftmcp/MicrosoftMcp
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=15
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/microsoftmcp /etc/microsoftmcp
+
+[Install]
+WantedBy=multi-user.target

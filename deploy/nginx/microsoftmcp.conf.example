@@ -1,0 +1,26 @@
+server {
+    listen 443 ssl;
+    server_name m365.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/m365.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/m365.example.com/privkey.pem;
+
+    # The MCP endpoint. Streamed (SSE) responses need buffering off and a long read timeout.
+    location = /mcp {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+        # onedrive_upload accepts files up to 10 MB, sent as base64; the server itself allows 16 MB.
+        client_max_body_size 16m;
+    }
+
+    # Protected-resource metadata; the path after the prefix is the path of the resource URI.
+    location ^~ /.well-known/oauth-protected-resource {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host $host;
+    }
+}
