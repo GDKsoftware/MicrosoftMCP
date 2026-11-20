@@ -36,7 +36,9 @@ implementation
 
 resourcestring
   ToolDescription = 'Lists the Microsoft accounts the user has linked, and the URL of the account page where the user links another one. ' +
-                    'A mailbox (own or shared) is always reached through one of these accounts.';
+                    'A mailbox (own or shared) is always reached through one of these accounts. ' +
+                    'Only work or school accounts (Microsoft Entra ID) can be linked; personal Microsoft accounts such as Outlook.com, ' +
+                    'Hotmail or Live are not supported.';
 
 { TListAccountsTool }
 

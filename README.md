@@ -10,8 +10,8 @@ Sign-in and the linked Microsoft accounts come from a central auth server built 
 
 Every tool except `list_accounts`, `list_mailboxes` and `mailbox_add` takes a required `mailbox` parameter: the short name of a mailbox.
 
-- A user links one or more Microsoft accounts on the account page of the auth server. `list_accounts` shows them.
-- `mailbox_add` gives a mailbox a short name (`^[a-z0-9][a-z0-9-]{0,31}$`, unique per user). It is either the own mailbox of a linked account, or a shared mailbox (an address) that the account has FullAccess to. The own mailbox of an account is usually added once per account, for example `work` and `private`.
+- A user links one or more Microsoft accounts on the account page of the auth server. `list_accounts` shows them. Only work or school accounts (Microsoft Entra ID) can be linked; personal Microsoft accounts (Outlook.com, Hotmail, Live) are not supported, because the auth server signs in through the `organizations` endpoint. A tenant that restricts user consent needs an administrator to grant consent to the app first.
+- `mailbox_add` gives a mailbox a short name (`^[a-z0-9][a-z0-9-]{0,31}$`, unique per user). It is either the own mailbox of a linked account, or a shared mailbox (an address) that the account has FullAccess to. The own mailbox of an account is usually added once per account, for example `work` and `private` for the mailboxes of two tenants.
 - `list_mailboxes` lists the short names, their display names and kind, and marks mailboxes whose account was unlinked or needs to be reconnected. `mailbox_rename` and `mailbox_remove` manage them. Removing a mailbox only removes the short name; nothing in Microsoft 365 changes.
 - An unknown short name gives an error that lists the short names the user has. A short name of another user is unknown, never the mail of that user.
 - The user comes from the validated token, never from a parameter.
