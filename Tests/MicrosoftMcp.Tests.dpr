@@ -25,7 +25,8 @@ uses
   MicrosoftMcp.Confirm.Memory.Tests in 'MicrosoftMcp.Confirm.Memory.Tests.pas',
   MicrosoftMcp.Tools.Base.Tests in 'MicrosoftMcp.Tools.Base.Tests.pas',
   MicrosoftMcp.Tools.Mailbox.Tests in 'MicrosoftMcp.Tools.Mailbox.Tests.pas',
-  MicrosoftMcp.Tools.Mail.Tests in 'MicrosoftMcp.Tools.Mail.Tests.pas';
+  MicrosoftMcp.Tools.Mail.Tests in 'MicrosoftMcp.Tools.Mail.Tests.pas',
+  MicrosoftMcp.Tools.Calendar.Tests in 'MicrosoftMcp.Tools.Calendar.Tests.pas';
 
 begin
   ReportMemoryLeaksOnShutdown := True;

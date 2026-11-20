@@ -87,6 +87,8 @@ type
   protected
     function PerformOnMailbox(const Params: TParams; const Mailbox: TResolvedMailbox; const UserId: string): TValue; override;
     function NeedsConfirmation(const Params: TParams): Boolean; virtual;
+    // For a tool that must look at the mailbox to decide, such as calendar_update (does the event have attendees?).
+    function NeedsConfirmationIn(const Params: TParams; const Mailbox: TResolvedMailbox): Boolean; virtual;
     function Summarize(const Params: TParams; const Mailbox: TResolvedMailbox): string; virtual; abstract;
 
   public
@@ -193,24 +195,30 @@ end;
 
 function TConfirmedMicrosoftTool<TParams, TResponse>.PerformOnMailbox(const Params: TParams; const Mailbox: TResolvedMailbox; const UserId: string): TValue;
 begin
-  if not NeedsConfirmation(Params) then
+  const ArgumentsHash = TToolSupport.ArgumentsHash(Params);
+
+  // A token is only ever issued for a call that needed confirmation, so a valid one makes the check below unnecessary.
+  const HasToken = not Params.ConfirmationToken.IsEmpty;
+  if HasToken and FServices.Confirmations.TryRedeem(UserId, FName, ArgumentsHash, Params.ConfirmationToken) then
     Exit(inherited PerformOnMailbox(Params, Mailbox, UserId));
 
-  const ArgumentsHash = TToolSupport.ArgumentsHash(Params);
-  const IsConfirmed = FServices.Confirmations.TryRedeem(UserId, FName, ArgumentsHash, Params.ConfirmationToken);
-  if IsConfirmed then
+  if not NeedsConfirmationIn(Params, Mailbox) then
     Exit(inherited PerformOnMailbox(Params, Mailbox, UserId));
 
   const Summary = Summarize(Params, Mailbox);
   const Token = FServices.Confirmations.Issue(UserId, FName, ArgumentsHash, Summary);
-  const HadToken = not Params.ConfirmationToken.IsEmpty;
 
-  Result := TToolSupport.ConfirmationValue(Summary, Token, HadToken);
+  Result := TToolSupport.ConfirmationValue(Summary, Token, HasToken);
 end;
 
 function TConfirmedMicrosoftTool<TParams, TResponse>.NeedsConfirmation(const Params: TParams): Boolean;
 begin
   Result := True;
+end;
+
+function TConfirmedMicrosoftTool<TParams, TResponse>.NeedsConfirmationIn(const Params: TParams; const Mailbox: TResolvedMailbox): Boolean;
+begin
+  Result := NeedsConfirmation(Params);
 end;
 
 function TConfirmedMicrosoftTool<TParams, TResponse>.GetOutputSchema: TJSONObject;

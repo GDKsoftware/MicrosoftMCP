@@ -37,6 +37,7 @@ type
     procedure RegisterTools;
     procedure RegisterMailboxTools;
     procedure RegisterMailTools;
+    procedure RegisterCalendarTools;
     procedure BuildHost;
     procedure LogStarted;
 
@@ -93,7 +94,16 @@ uses
   MicrosoftMcp.Tools.Mail.Move,
   MicrosoftMcp.Tools.Mail.MarkRead,
   MicrosoftMcp.Tools.Mail.Delete,
-  MicrosoftMcp.Tools.Mail.GetSignature;
+  MicrosoftMcp.Tools.Mail.GetSignature,
+  MicrosoftMcp.Tools.Calendar.List,
+  MicrosoftMcp.Tools.Calendar.Search,
+  MicrosoftMcp.Tools.Calendar.Get,
+  MicrosoftMcp.Tools.Calendar.Create,
+  MicrosoftMcp.Tools.Calendar.Update,
+  MicrosoftMcp.Tools.Calendar.Delete,
+  MicrosoftMcp.Tools.Calendar.Respond,
+  MicrosoftMcp.Tools.Calendar.ProposeTime,
+  MicrosoftMcp.Tools.Calendar.Availability;
 
 const
   LoopbackAddress = '127.0.0.1';
@@ -220,6 +230,7 @@ begin
   // TMCPRegistry.RegisterTool call belongs here, before BuildHost.
   RegisterMailboxTools;
   RegisterMailTools;
+  RegisterCalendarTools;
 end;
 
 procedure TServerComposition.RegisterMailboxTools;
@@ -368,6 +379,65 @@ begin
     function: IMCPTool
     begin
       Result := TMailGetSignatureTool.Create(Services);
+    end);
+end;
+
+procedure TServerComposition.RegisterCalendarTools;
+begin
+  const Services = FToolServices;
+
+  TMCPRegistry.RegisterTool(TCalendarListTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarListTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarSearchTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarSearchTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarGetTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarGetTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarCreateTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarCreateTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarUpdateTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarUpdateTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarDeleteTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarDeleteTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarRespondTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarRespondTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarProposeTimeTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarProposeTimeTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TCalendarAvailabilityTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TCalendarAvailabilityTool.Create(Services);
     end);
 end;
 
