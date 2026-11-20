@@ -31,6 +31,8 @@ type
     Store: TServerStoreKind;
     DatabaseConnection: string;
     MigrationsPath: string;
+    // Signs the requestState tokens of the MCP library; empty means the composition generates a key per process.
+    RequestStateKey: string;
 
     class function FromEnvironment: TServerSettings; static;
 
@@ -55,6 +57,7 @@ const
   StoreVariable = 'MICROSOFTMCP_STORE';
   DatabaseVariable = 'MICROSOFTMCP_DB';
   MigrationsVariable = 'MICROSOFTMCP_MIGRATIONS';
+  RequestStateKeyVariable = 'MICROSOFTMCP_REQUEST_STATE_KEY';
 
   DefaultAuthInternalUrl = 'http://127.0.0.1:8101';
   DefaultPort = 8090;
@@ -104,6 +107,7 @@ begin
     Result.DatabaseConnection := ReadRequired(ReadVariable, DatabaseVariable);
 
   Result.MigrationsPath := ReadMigrationsPath(ReadVariable, ExecutableFolder);
+  Result.RequestStateKey := ReadOptional(ReadVariable, RequestStateKeyVariable, '');
 end;
 
 class function TServerSettings.ReadRequired(const ReadVariable: TEnvironmentReader; const Name: string): string;

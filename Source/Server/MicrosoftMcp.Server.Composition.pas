@@ -8,8 +8,10 @@ uses
   MCPAuth.Store.FireDAC.PgDriver,
   MCPAuth.Client.UpstreamAccounts.Interfaces,
   MicrosoftMcp.Mailbox.Interfaces,
+  MicrosoftMcp.Confirm.Interfaces,
   MicrosoftMcp.Tools.Services.Interfaces,
-  MicrosoftMcp.Server.Settings;
+  MicrosoftMcp.Server.Settings,
+  MicrosoftMcp.Server.Maintenance;
 
 type
   // The composition root of the MicrosoftMCP program: builds the database, the linked accounts of the central auth
@@ -23,7 +25,9 @@ type
     FMailboxes: IMailboxRepository;
     FAccounts: IUpstreamAccounts;
     FToolServices: IToolServices;
+    FConfirmations: IConfirmations;
     FHost: TMCPServerHost;
+    FMaintenance: TServerMaintenance;
     FIsRunning: Boolean;
 
     class function WithDatabaseTimeouts(const ConnectionString: string): string; static;
@@ -40,6 +44,7 @@ type
     procedure RegisterCalendarTools;
     procedure RegisterContactsTools;
     procedure RegisterFilesTools;
+    function RequestStateKey: string;
     procedure BuildHost;
     procedure LogStarted;
 
@@ -64,6 +69,7 @@ uses
   MCPServer.Tool.Base,
   MCPServer.Registration,
   MCPAuth.Clock,
+  MCPAuth.Secret.Interfaces,
   MCPAuth.Secret.Token,
   MCPAuth.Client,
   MCPAuth.Client.UpstreamAccounts,
@@ -177,8 +183,10 @@ destructor TServerComposition.Destroy;
 begin
   Stop;
 
+  FMaintenance.Free;
   FHost.Free;
   FToolServices := nil;
+  FConfirmations := nil;
   FAccounts := nil;
   FMailboxes := nil;
   FConnectionFactory := nil;
@@ -200,9 +208,11 @@ begin
     BuildToolServices;
     RegisterTools;
     BuildHost;
+    FMaintenance := TServerMaintenance.Create(FConfirmations);
   end;
 
   FHost.StartHttp;
+  FMaintenance.Start;
   FIsRunning := True;
   LogStarted;
 end;
@@ -240,9 +250,9 @@ end;
 procedure TServerComposition.BuildToolServices;
 begin
   const AccountPageUrl = TMCPAuthClient.AccountPageUrl(FSettings.AuthIssuer);
-  const Confirmations = TConfirmationsMemory.Create(TTokenGenerator.Create, TSystemClock.Create);
+  FConfirmations := TConfirmationsMemory.Create(TTokenGenerator.Create, TSystemClock.Create);
 
-  FToolServices := TToolServices.Create(FMailboxes, FAccounts, TGraphClientFactory.Create, Confirmations, AccountPageUrl);
+  FToolServices := TToolServices.Create(FMailboxes, FAccounts, TGraphClientFactory.Create, FConfirmations, AccountPageUrl);
 end;
 
 procedure TServerComposition.RegisterTools;
@@ -588,6 +598,18 @@ begin
     end);
 end;
 
+function TServerComposition.RequestStateKey: string;
+begin
+  // No tool of this server uses requestState, but the library warns about a missing key. Without a configured key
+  // each process signs with its own random key, which is what the library would do and fine for a single instance.
+  Result := FSettings.RequestStateKey;
+  if Result.IsEmpty then
+  begin
+    const Tokens: ITokenGenerator = TTokenGenerator.Create;
+    Result := Tokens.NewToken;
+  end;
+end;
+
 procedure TServerComposition.BuildHost;
 begin
   FHost := TMCPServerHost.Create;
@@ -600,6 +622,7 @@ begin
   FHost.Settings.ServerName           := ServerName;
   FHost.Settings.AuthorizationServers := FSettings.AuthIssuer;
   FHost.Settings.ResourceUri          := FSettings.ResourceUri;
+  FHost.Settings.RequestStateKey      := RequestStateKey;
 
   FHost.Authorizer := TMCPAuthClient.CreateAuthorizer(FSettings.ResourceUri,
                                                       FSettings.AuthInternalUrl,
@@ -621,6 +644,7 @@ begin
     Exit;
 
   FIsRunning := False;
+  FMaintenance.Stop;
   FHost.Stop;
 end;
 

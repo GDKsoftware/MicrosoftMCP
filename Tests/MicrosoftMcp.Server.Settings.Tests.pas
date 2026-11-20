@@ -46,6 +46,9 @@ type
 
     [Test]
     procedure IssuerAndInternalUrlLoseTrailingSlash;
+
+    [Test]
+    procedure RequestStateKeyIsOptional;
   end;
 
 implementation
@@ -65,6 +68,7 @@ const
   StoreVariable = 'MICROSOFTMCP_STORE';
   DatabaseVariable = 'MICROSOFTMCP_DB';
   MigrationsVariable = 'MICROSOFTMCP_MIGRATIONS';
+  RequestStateKeyVariable = 'MICROSOFTMCP_REQUEST_STATE_KEY';
   ServiceSecret = 'secret-value-never-shown';
 
 { TServerSettingsTests }
@@ -129,6 +133,15 @@ begin
   Assert.AreEqual<Word>(8090, Settings.Port);
   Assert.AreEqual<TServerStoreKind>(TServerStoreKind.Memory, Settings.Store);
   Assert.AreEqual('', Settings.DatabaseConnection);
+end;
+
+procedure TServerSettingsTests.RequestStateKeyIsOptional;
+begin
+  Assert.AreEqual('', Load.RequestStateKey);
+
+  FVariables[RequestStateKeyVariable] := ' shared-key ';
+
+  Assert.AreEqual('shared-key', Load.RequestStateKey);
 end;
 
 procedure TServerSettingsTests.MissingServiceSecretRaisesWithNameOnly;

@@ -8,6 +8,7 @@ uses
   MCPAuth.Server.Shutdown,
   MicrosoftMcp.Server.Exceptions in 'Server\MicrosoftMcp.Server.Exceptions.pas',
   MicrosoftMcp.Server.Settings in 'Server\MicrosoftMcp.Server.Settings.pas',
+  MicrosoftMcp.Server.Maintenance in 'Server\MicrosoftMcp.Server.Maintenance.pas',
   MicrosoftMcp.Server.Composition in 'Server\MicrosoftMcp.Server.Composition.pas';
 
 const
