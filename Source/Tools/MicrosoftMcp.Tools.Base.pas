@@ -140,7 +140,7 @@ begin
       if TToolSupport.IsServerHandled(E) then
         raise;
 
-      Result := TToolSupport.ErrorValue(FServices.Errors, E, Default(TMailbox));
+      Result := TToolSupport.ErrorValue(FServices.Errors, E, Default(TMailbox), FName);
     end;
   end;
 end;
@@ -178,7 +178,7 @@ begin
       if TToolSupport.IsServerHandled(E) then
         raise;
 
-      Result := TToolSupport.ErrorValue(FServices.Errors, E, Mailbox.Mailbox);
+      Result := TToolSupport.ErrorValue(FServices.Errors, E, Mailbox.Mailbox, FName);
     end;
   end;
 end;
@@ -216,7 +216,7 @@ begin
       if TToolSupport.IsServerHandled(E) then
         raise;
 
-      Result := TToolSupport.ErrorValue(FServices.Errors, E, Mailbox.Mailbox);
+      Result := TToolSupport.ErrorValue(FServices.Errors, E, Mailbox.Mailbox, FName);
     end;
   end;
 end;

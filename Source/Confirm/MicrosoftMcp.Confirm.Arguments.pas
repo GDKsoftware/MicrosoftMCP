@@ -8,11 +8,11 @@ uses
 
 type
   // The hash that ties a confirmation token to the arguments of a tool call: SHA-256 (via TTokenHash) over canonical
-  // JSON, with the keys of every object sorted and the confirmation token itself left out.
+  // JSON, with the keys of every object sorted and the confirmation token (a top-level argument) left out.
   TConfirmationArguments = class
   private
     class procedure WriteValue(const Value: TJSONValue; const Builder: TStringBuilder); static;
-    class procedure WriteObject(const JsonObject: TJSONObject; const Builder: TStringBuilder); static;
+    class procedure WriteObject(const JsonObject: TJSONObject; const Builder: TStringBuilder; const IsTopLevel: Boolean); static;
     class procedure WriteKey(const Key: string; const Builder: TStringBuilder); static;
     class procedure WriteArray(const JsonArray: TJSONArray; const Builder: TStringBuilder); static;
     class function SortedKeys(const JsonObject: TJSONObject): TArray<string>; static;
@@ -50,7 +50,7 @@ class function TConfirmationArguments.Canonical(const Arguments: TJSONObject): s
 begin
   const Builder = TStringBuilder.Create;
   try
-    WriteObject(Arguments, Builder);
+    WriteObject(Arguments, Builder, True);
     Result := Builder.ToString;
   finally
     Builder.Free;
@@ -61,7 +61,7 @@ class procedure TConfirmationArguments.WriteValue(const Value: TJSONValue; const
 begin
   if Value is TJSONObject then
   begin
-    WriteObject(TJSONObject(Value), Builder);
+    WriteObject(TJSONObject(Value), Builder, False);
   end
   else if Value is TJSONArray then
   begin
@@ -73,14 +73,14 @@ begin
   end;
 end;
 
-class procedure TConfirmationArguments.WriteObject(const JsonObject: TJSONObject; const Builder: TStringBuilder);
+class procedure TConfirmationArguments.WriteObject(const JsonObject: TJSONObject; const Builder: TStringBuilder; const IsTopLevel: Boolean);
 begin
   Builder.Append(ObjectStart);
 
   var IsFirst := True;
   for var Key in SortedKeys(JsonObject) do
   begin
-    const IsToken = (Key = TokenKey);
+    const IsToken = (IsTopLevel and (Key = TokenKey));
     if IsToken then
       Continue;
 

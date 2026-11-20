@@ -10,7 +10,8 @@ uses
 
 type
   // Available is a linked account that has no own mailbox yet; its row carries a suggested short name.
-  TMailboxStatus = (Ok, AccountUnlinked, ReconnectRequired, Available);
+  // Unknown: the linked accounts could not be read, so the state of the account is not known.
+  TMailboxStatus = (Ok, AccountUnlinked, ReconnectRequired, Available, Unknown);
 
   TMailboxStatusHelper = record helper for TMailboxStatus
     function Code: string;
@@ -61,6 +62,7 @@ const
   AccountUnlinkedCode = 'account_unlinked';
   ReconnectRequiredCode = 'reconnect_required';
   AvailableCode = 'available';
+  UnknownCode = 'unknown';
 
 { TMailboxStatusHelper }
 
@@ -71,6 +73,7 @@ begin
     TMailboxStatus.AccountUnlinked   : Result := AccountUnlinkedCode;
     TMailboxStatus.ReconnectRequired : Result := ReconnectRequiredCode;
     TMailboxStatus.Available         : Result := AvailableCode;
+    TMailboxStatus.Unknown           : Result := UnknownCode;
   else
     raise ENotSupportedException.CreateFmt('Unsupported mailbox status: %d', [Ord(Self)]);
   end;

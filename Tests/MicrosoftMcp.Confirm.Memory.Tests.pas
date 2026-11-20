@@ -56,6 +56,9 @@ type
 
     [Test]
     procedure OtherValueChangesHash;
+
+    [Test]
+    procedure NestedConfirmationTokenIsPartOfHash;
   end;
 
 implementation
@@ -214,6 +217,14 @@ procedure TConfirmationsMemoryTests.OtherValueChangesHash;
 begin
   const Hash = HashOf(ArgumentsJson);
   const OtherHash = HashOf(OtherArgumentsJson);
+
+  Assert.AreNotEqual(Hash, OtherHash);
+end;
+
+procedure TConfirmationsMemoryTests.NestedConfirmationTokenIsPartOfHash;
+begin
+  const Hash = HashOf('{"mailbox":"work","options":{"confirmation_token":"a"}}');
+  const OtherHash = HashOf('{"mailbox":"work","options":{"confirmation_token":"b"}}');
 
   Assert.AreNotEqual(Hash, OtherHash);
 end;

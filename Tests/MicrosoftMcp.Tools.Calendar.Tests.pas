@@ -43,6 +43,9 @@ type
     procedure ListPassesRangeAsUtc;
 
     [Test]
+    procedure TimesIgnoreTheLocaleTimeSeparator;
+
+    [Test]
     procedure ListShowsEventsInUtc;
 
     [Test]
@@ -104,6 +107,7 @@ implementation
 
 uses
   System.SysUtils,
+  System.DateUtils,
   MCPAuth.Clock,
   MCPAuth.Secret.Token,
   MCPAuth.Client.UpstreamAccounts.Interfaces,
@@ -120,6 +124,7 @@ uses
   MicrosoftMcp.Tools.Calendar.Respond,
   MicrosoftMcp.Tools.Calendar.ProposeTime,
   MicrosoftMcp.Tools.Calendar.Availability,
+  MicrosoftMcp.Tools.Calendar.Time,
   MicrosoftMcp.Tests.ToolCall;
 
 const
@@ -696,6 +701,19 @@ begin
   const AvailabilityTool: IMCPTool = Availability;
   Assert.IsTrue(Availability.GetAnnotations.GetValue<Boolean>('readOnlyHint'));
   Assert.AreEqual('calendar_availability', AvailabilityTool.Name);
+end;
+
+procedure TCalendarToolsTests.TimesIgnoreTheLocaleTimeSeparator;
+begin
+  const Moment = EncodeDateTime(2026, 11, 20, 9, 30, 15, 0);
+  const SavedSeparator = FormatSettings.TimeSeparator;
+  FormatSettings.TimeSeparator := '.';
+  try
+    Assert.AreEqual('2026-11-20T09:30:15Z', TCalendarTime.ToIso(Moment));
+    Assert.AreEqual('2026-11-20T09:30:15', TCalendarTime.ToGraph(Moment));
+  finally
+    FormatSettings.TimeSeparator := SavedSeparator;
+  end;
 end;
 
 end.

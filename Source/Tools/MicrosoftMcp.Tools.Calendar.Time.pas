@@ -167,12 +167,12 @@ end;
 
 class function TCalendarTime.ToIso(const Value: TDateTime): string;
 begin
-  Result := FormatDateTime(IsoFormat, Value);
+  Result := FormatDateTime(IsoFormat, Value, TFormatSettings.Invariant);
 end;
 
 class function TCalendarTime.ToGraph(const Value: TDateTime): string;
 begin
-  Result := FormatDateTime(GraphFormat, Value);
+  Result := FormatDateTime(GraphFormat, Value, TFormatSettings.Invariant);
 end;
 
 class function TCalendarTime.FromGraph(const Value: string): string;

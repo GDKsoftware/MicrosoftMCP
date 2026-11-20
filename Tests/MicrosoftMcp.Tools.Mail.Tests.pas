@@ -42,6 +42,9 @@ type
     procedure TopIsCappedAt100;
 
     [Test]
+    procedure SearchEscapesQuotesInQuery;
+
+    [Test]
     procedure ReadReturnsTextBodyByDefault;
 
     [Test]
@@ -97,6 +100,12 @@ type
 
     [Test]
     procedure MoveAcceptsWellKnownFolderName;
+
+    [Test]
+    procedure MoveToDeletedItemsPointsToMailDelete;
+
+    [Test]
+    procedure AttachmentMissingFromListIsNotDownloaded;
 
     [Test]
     procedure MarkReadSendsIsRead;
@@ -700,6 +709,51 @@ begin
   const DraftTool: IMCPTool = Draft;
   Assert.IsFalse(Draft.GetAnnotations.GetValue<Boolean>('destructiveHint'));
   Assert.AreEqual('mail_create_draft', DraftTool.Name);
+end;
+
+procedure TMailToolsTests.MoveToDeletedItemsPointsToMailDelete;
+begin
+  FTransport.Respond(201, '{"id":"m1-moved"}');
+  const Tool: IMCPTool = TMailMoveTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","message_id":"m1","destination_folder":"DeletedItems"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'mail_delete');
+    Assert.AreEqual(0, FTransport.RequestCount);
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.AttachmentMissingFromListIsNotDownloaded;
+begin
+  FTransport.Respond(200, '{"value":[{"id":"a1","name":"note.txt","contentType":"text/plain","size":5}]}');
+  FTransport.Respond(200, '{"@odata.type":"#microsoft.graph.fileAttachment","id":"a2","name":"big.bin","size":5,"contentBytes":"SGVsbG8="}');
+  const Tool: IMCPTool = TMailGetAttachmentTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","message_id":"m1","attachment_id":"a2"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'mail_list_attachments');
+    Assert.AreEqual(1, FTransport.RequestCount, 'Only the list is read');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.SearchEscapesQuotesInQuery;
+begin
+  FTransport.Respond(200, EmptyList);
+  const Tool: IMCPTool = TMailSearchTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","query":"subject:\"Q3 plan\""}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(FTransport.LastRequest.Url, '%5C%22Q3');
+  finally
+    CallResult.Free;
+  end;
 end;
 
 end.

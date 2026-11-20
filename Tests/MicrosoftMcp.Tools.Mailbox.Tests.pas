@@ -74,6 +74,12 @@ type
     procedure RenameToTakenSlugGivesClearError;
 
     [Test]
+    procedure AddWithUnknownKindGivesClearError;
+
+    [Test]
+    procedure RenameReportsSuccessWhenAccountsCannotBeListed;
+
+    [Test]
     procedure RemoveNeedsConfirmation;
 
     [Test]
@@ -476,6 +482,40 @@ begin
   Assert.IsTrue(RemoveTool.Annotations.GetValue<Boolean>('openWorldHint'));
   Assert.IsFalse(AddTool.Annotations.GetValue<Boolean>('readOnlyHint'));
   Assert.IsFalse(AddTool.Annotations.GetValue<Boolean>('destructiveHint'));
+end;
+
+procedure TMailboxToolsTests.AddWithUnknownKindGivesClearError;
+begin
+  const Tool: IMCPTool = TMailboxAddTool.Create(FServices);
+
+  const CallResult = Call(Tool, Format('{"account":"%s","kind":"team","slug":"team"}', [WorkKey]));
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult));
+    Assert.Contains(TToolCall.Text(CallResult), 'shared');
+    Assert.DoesNotContain(TToolCall.Text(CallResult), 'Graph');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailboxToolsTests.RenameReportsSuccessWhenAccountsCannotBeListed;
+begin
+  AddMailbox('gdk', WorkKey, TMailboxKind.Own, '');
+  FAccounts.FailListWith(
+    function: Exception
+    begin
+      Result := EInvalidOpException.Create('auth server down');
+    end);
+  const Tool: IMCPTool = TMailboxRenameTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","new_slug":"werk"}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.AreEqual('werk', TToolCall.Structured(CallResult).GetValue<string>('mailbox.slug'));
+    Assert.AreEqual('unknown', TToolCall.Structured(CallResult).GetValue<string>('mailbox.status'));
+  finally
+    CallResult.Free;
+  end;
 end;
 
 end.

@@ -39,6 +39,7 @@ type
 implementation
 
 uses
+  MicrosoftMcp.Tools.Support,
   MicrosoftMcp.Tools.Mail.Support,
   MicrosoftMcp.Tools.Contacts.Support;
 
@@ -58,7 +59,7 @@ end;
 
 function TContactsSearchTool.Run(const Params: TContactsSearchParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TContactsSearchResponse;
 begin
-  const Contacts = TContactsSupport.Client(Graph).SearchContacts(Params.Query, TMailSupport.ClampTop(Params.Top));
+  const Contacts = TContactsSupport.Client(Graph).SearchContacts(TToolSupport.SearchPhrase(Params.Query), TMailSupport.ClampTop(Params.Top));
 
   Result := TContactsSearchResponse.From(Contacts);
 end;

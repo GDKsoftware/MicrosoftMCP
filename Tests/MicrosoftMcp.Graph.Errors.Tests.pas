@@ -65,6 +65,9 @@ type
 
     [Test]
     procedure OtherExceptionNamesOnlyTheClass;
+
+    [Test]
+    procedure OtherExceptionDoesNotBlameGraph;
   end;
 
 implementation
@@ -264,6 +267,19 @@ begin
 
     Assert.Contains(Message, 'EInvalidOpException');
     Assert.DoesNotContain(Message, SecretBody);
+  finally
+    Error.Free;
+  end;
+end;
+
+procedure TGraphErrorsTests.OtherExceptionDoesNotBlameGraph;
+begin
+  const Error = EInvalidOpException.Create(SecretBody);
+  try
+    const Message = FTranslator.Translate(Error, FOwnMailbox);
+
+    Assert.DoesNotContain(Message, 'Microsoft Graph');
+    Assert.IsTrue(FTranslator.IsUnexpected(Error));
   finally
     Error.Free;
   end;

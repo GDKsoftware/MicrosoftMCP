@@ -30,6 +30,9 @@ type
 
     function Translate(const E: Exception; const Mailbox: TMailbox): string;
 
+    // True for an exception that is no Graph or mailbox failure, such as a database or programming error.
+    function IsUnexpected(const E: Exception): Boolean;
+
     // The result of a Get, Post, Patch or Delete of TGraphHttpClient that has an 'error' member; False when it has none.
     function TryTranslateErrorObject(const Json: TJSONObject; const Mailbox: TMailbox; out Message: string): Boolean;
 
@@ -73,6 +76,7 @@ resourcestring
   OtherStatusFormat = 'Microsoft Graph returned an error (HTTP %d).';
   UnknownFailure = 'The request to Microsoft Graph failed; the cause is not known. Try again later.';
   ExceptionFailureFormat = 'The request to Microsoft Graph failed (%s). Try again later.';
+  InternalFailureFormat = 'The tool failed because of an internal error (%s). Try again later; when it keeps failing, tell the user.';
 
 { TGraphErrorTranslator }
 
@@ -115,7 +119,17 @@ begin
     Exit(DescribeStatus(StatusCode, NoRetryAfter, Mailbox));
   end;
 
-  Result := Format(ExceptionFailureFormat, [E.ClassName]);
+  Result := Format(InternalFailureFormat, [E.ClassName]);
+end;
+
+function TGraphErrorTranslator.IsUnexpected(const E: Exception): Boolean;
+begin
+  const IsKnown = ((E is EMailboxError) or
+                   (E is EGraphHttpError) or
+                   (E is EGraphDriveError) or
+                   (E is EGraphDriveValidationError) or
+                   (E is EGraphApiException));
+  Result := not IsKnown;
 end;
 
 function TGraphErrorTranslator.TryTranslateErrorObject(const Json: TJSONObject; const Mailbox: TMailbox; out Message: string): Boolean;

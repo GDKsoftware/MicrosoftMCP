@@ -45,6 +45,7 @@ type
 implementation
 
 uses
+  MicrosoftMcp.Tools.Support,
   MicrosoftMcp.Tools.Mail.Support;
 
 resourcestring
@@ -67,7 +68,7 @@ begin
   const Top = TMailSupport.ClampTop(Params.Top);
   const FolderId = TMailSupport.FolderId(Params.Folder);
 
-  const SearchResult = TMailSupport.Client(Graph).SearchMessages(Params.Query, FolderId, Top, 0);
+  const SearchResult = TMailSupport.Client(Graph).SearchMessages(TToolSupport.SearchPhrase(Params.Query), FolderId, Top, 0);
 
   Result := TMailListResponse.FromResult(SearchResult);
 end;

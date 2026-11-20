@@ -35,6 +35,7 @@ implementation
 
 uses
   System.SysUtils,
+  MicrosoftMcp.Tools.Support,
   MSGraph.Graph.SharePoint.Types,
   MicrosoftMcp.Tools.Exceptions,
   MicrosoftMcp.Tools.Account.Support,
@@ -65,7 +66,7 @@ begin
     raise EToolArgumentError.Create(QueryMissing);
 
   TAccountSupport.UseOwnAccount(Graph);
-  const Found = TFilesSupport.SharePointClient(Graph).SearchDriveItems(Params.SiteId, Params.Query, PageSize);
+  const Found = TFilesSupport.SharePointClient(Graph).SearchDriveItems(Params.SiteId, TToolSupport.ODataString(Params.Query), PageSize);
 
   var Entries: TArray<TFileEntry> := [];
   for var Item in Found do

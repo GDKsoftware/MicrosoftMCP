@@ -24,6 +24,7 @@ implementation
 
 uses
   System.SysUtils,
+  MicrosoftMcp.Tools.Support,
   MSGraph.Graph.People.Interfaces,
   MSGraph.Graph.People,
   MicrosoftMcp.Tools.Exceptions,
@@ -63,7 +64,7 @@ begin
 
   TAccountSupport.UseOwnAccount(Graph);
   const Client: IPeopleClient = TPeopleClient.Create(Graph, False);
-  const People = Client.SearchPeople(Params.Query, Top);
+  const People = Client.SearchPeople(TToolSupport.SearchPhrase(Params.Query), Top);
 
   Result := TPeopleResponse.From(People, TAccountSupport.Note(Mailbox));
 end;

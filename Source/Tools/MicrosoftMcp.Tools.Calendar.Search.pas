@@ -79,7 +79,7 @@ begin
     raise EToolArgumentError.Create(QueryRequired);
 
   const Moment = TCalendarTime.Resolve(Params.StartTime, Params.EndTime, '', False);
-  const NowUtc = TTimeZone.Local.ToUniversalTime(Now);
+  const NowUtc = TDateTime.NowUTC;
 
   var Start := Moment.Start;
   if Start = 0 then

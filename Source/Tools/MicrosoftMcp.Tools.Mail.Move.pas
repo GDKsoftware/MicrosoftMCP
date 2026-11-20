@@ -44,10 +44,17 @@ type
 implementation
 
 uses
+  System.SysUtils,
+  MicrosoftMcp.Tools.Exceptions,
   MicrosoftMcp.Tools.Mail.Support;
 
+const
+  DeletedItemsFolder = 'deleteditems';
+
 resourcestring
-  ToolDescription = 'Moves a message to another folder of the same mailbox. The message gets a new id.';
+  ToolDescription = 'Moves a message to another folder of the same mailbox. The message gets a new id. ' +
+                    'To delete a message use mail_delete, not a move to deleteditems.';
+  UseMailDelete = 'Moving a message to Deleted Items deletes it; use mail_delete, which asks the user to confirm.';
 
 { TMailMoveTool }
 
@@ -63,6 +70,8 @@ end;
 function TMailMoveTool.Run(const Params: TMailMoveParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TMailMoveResponse;
 begin
   const FolderId = TMailSupport.FolderId(Params.DestinationFolder);
+  if SameText(FolderId, DeletedItemsFolder) then
+    raise EToolArgumentError.Create(UseMailDelete);
 
   const Moved = TMailSupport.Client(Graph).MoveMessage(Params.MessageId, FolderId);
 

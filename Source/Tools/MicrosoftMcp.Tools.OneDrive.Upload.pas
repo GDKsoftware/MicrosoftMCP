@@ -73,7 +73,6 @@ resourcestring
   NoContent = 'Give the content of the file in content (text) or content_base64 (binary).';
   InvalidBase64 = 'content_base64 is not valid base64.';
   Base64TooLarge = 'The content in content_base64 is larger than 10 MB; files over 10 MB cannot be uploaded through this tool.';
-  EmptyPath = 'Give the path of the file to create in path.';
 
 { TOneDriveUploadTool }
 
@@ -83,13 +82,13 @@ begin
 
   FName := ToolName;
   FDescription := ToolDescription;
-  MarkChanging(False, False);
+  // With overwrite:true it replaces an existing file.
+  MarkChanging(True, False);
 end;
 
 function TOneDriveUploadTool.Run(const Params: TOneDriveUploadParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TFileActionResponse;
 begin
-  if Params.Path.Trim([' ', '/']).IsEmpty then
-    raise EToolArgumentError.Create(EmptyPath);
+  TFilesSupport.GuardItemPath(Params.Path);
 
   const Bytes = ContentOf(Params);
   TFilesSupport.GuardSize(Params.Path, Length(Bytes));

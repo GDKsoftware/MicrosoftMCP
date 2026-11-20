@@ -69,6 +69,7 @@ resourcestring
   SummaryFormat = 'Send an e-mail with subject "%s" from mailbox %s to %s.';
   NotSent = 'The message was created as a draft (id %s) but could not be sent: %s';
   SentStatus = 'sent';
+  SendRefused = 'Microsoft Graph did not accept the send request';
 
 { TMailSendTool }
 
@@ -100,14 +101,16 @@ begin
                                  TMailSupport.CleanRecipients(Params.BccRecipients),
                                  IsHtml);
 
+  // The draft stays in the Drafts folder when sending fails, so the message is not lost.
   try
-    Mail.SendDraft(Draft.Id);
+    const IsSent = Mail.SendDraft(Draft.Id);
+    if not IsSent then
+      raise EToolError.CreateFmt(NotSent, [Draft.Id, SendRefused]);
   except
+    on E: EToolError do
+      raise;
     on E: Exception do
-    begin
-      // The draft stays in the Drafts folder, so the message is not lost.
       raise EToolError.CreateFmt(NotSent, [Draft.Id, FServices.Errors.Translate(E, Mailbox.Mailbox)]);
-    end;
   end;
 
   Result := TMailActionResponse.Done(SentStatus);

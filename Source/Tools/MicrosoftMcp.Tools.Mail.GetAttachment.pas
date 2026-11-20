@@ -76,6 +76,7 @@ resourcestring
   ToolDescription = 'Fetches one attachment of a message as an embedded resource (base64 content with its MIME type). ' +
                     'Attachments over 10 MB are refused.';
   TooLarge = 'The attachment "%s" is %d bytes; attachments over 10 MB cannot be fetched.';
+  AttachmentNotListed = 'The message has no attachment with this attachment_id; take the id from mail_list_attachments.';
   Described = 'Attachment "%s", %s, %d bytes.';
 
 { TMailGetAttachmentTool }
@@ -130,9 +131,16 @@ begin
   for var Attachment in Mail.GetMessageAttachments(Params.MessageId) do
   begin
     const IsRequested = (Attachment.Id = Params.AttachmentId);
-    if IsRequested and (Attachment.Size > MaximumBytes) then
+    if not IsRequested then
+      Continue;
+
+    if Attachment.Size > MaximumBytes then
       raise EToolError.CreateFmt(TooLarge, [Attachment.Name, Attachment.Size]);
+
+    Exit;
   end;
+
+  raise EToolArgumentError.Create(AttachmentNotListed);
 end;
 
 end.

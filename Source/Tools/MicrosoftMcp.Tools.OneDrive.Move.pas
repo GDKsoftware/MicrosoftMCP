@@ -49,7 +49,8 @@ implementation
 uses
   System.SysUtils,
   MicrosoftMcp.Tools.Exceptions,
-  MicrosoftMcp.Tools.Account.Support;
+  MicrosoftMcp.Tools.Account.Support,
+  MicrosoftMcp.Tools.Files.Support;
 
 const
   MovedStatus = 'moved';
@@ -72,6 +73,8 @@ end;
 
 function TOneDriveMoveTool.Run(const Params: TOneDriveMoveParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TFileActionResponse;
 begin
+  TFilesSupport.GuardItemPath(Params.Path);
+
   const HasParent = not Params.NewParentId.Trim.IsEmpty;
   const HasName = not Params.NewName.Trim.IsEmpty;
   if not (HasParent or HasName) then

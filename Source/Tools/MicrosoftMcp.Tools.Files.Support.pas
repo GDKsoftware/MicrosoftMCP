@@ -26,6 +26,9 @@ type
     // Raises a clear error when the content is larger than MaximumBytes; called before the content is fetched.
     class procedure GuardSize(const Name: string; const Size: Int64); static;
 
+    // Raises EToolArgumentError when the path addresses the root of the drive (empty or only slashes).
+    class procedure GuardItemPath(const Path: string); static;
+
     // Text (UTF-8) when the MIME type or the extension says so and the bytes hold no NUL; everything else is binary.
     // Office formats are binary: Graph's format conversion is not used.
     class function IsText(const MimeType, Name: string; const Bytes: TBytes): Boolean; static;
@@ -65,12 +68,20 @@ resourcestring
   Described = 'File "%s", %s, %d bytes, as %s.';
   AsText = 'text';
   AsResource = 'an embedded resource';
+  RootPath = 'Give the path of a file or folder in path; the root of the OneDrive itself cannot be used here.';
 
 { TFilesSupport }
 
 class function TFilesSupport.SharePointClient(const Graph: TGraphHttpClient): ISharePointClient;
 begin
   Result := TSharePointClient.Create(Graph, False);
+end;
+
+class procedure TFilesSupport.GuardItemPath(const Path: string);
+begin
+  const ItemPath = Path.Trim([' ', '/']);
+  if ItemPath.IsEmpty then
+    raise EToolArgumentError.Create(RootPath);
 end;
 
 class procedure TFilesSupport.GuardSize(const Name: string; const Size: Int64);

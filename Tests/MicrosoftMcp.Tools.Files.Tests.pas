@@ -44,6 +44,9 @@ type
     procedure SharePointSearchFilesPassesQuery;
 
     [Test]
+    procedure SharePointSearchFilesDoublesApostrophes;
+
+    [Test]
     procedure SharePointReadReturnsTextForTextFiles;
 
     [Test]
@@ -99,6 +102,12 @@ type
 
     [Test]
     procedure ToolsCarryTheirAnnotations;
+
+    [Test]
+    procedure UploadIsMarkedDestructive;
+
+    [Test]
+    procedure DeleteAndMoveRefuseTheRoot;
   end;
 
 implementation
@@ -601,6 +610,52 @@ begin
   const ReadTool: IMCPTool = Read;
   Assert.IsTrue(Read.GetAnnotations.GetValue<Boolean>('readOnlyHint'));
   Assert.AreEqual('sharepoint_read_file', ReadTool.Name);
+end;
+
+procedure TFilesToolsTests.UploadIsMarkedDestructive;
+begin
+  const Upload = TOneDriveUploadTool.Create(FServices);
+  const UploadTool: IMCPTool = Upload;
+
+  Assert.IsTrue(Upload.GetAnnotations.GetValue<Boolean>('destructiveHint'), 'overwrite:true replaces a file');
+  Assert.AreEqual('onedrive_upload', UploadTool.Name);
+end;
+
+procedure TFilesToolsTests.DeleteAndMoveRefuseTheRoot;
+begin
+  FTransport.Respond(200, DriveTextJson);
+  const DeleteTool: IMCPTool = TOneDriveDeleteTool.Create(FServices);
+  const MoveTool: IMCPTool = TOneDriveMoveTool.Create(FServices);
+
+  const DeleteResult = Call(DeleteTool, '{"mailbox":"gdk","path":" / "}');
+  try
+    Assert.IsTrue(TToolCall.IsError(DeleteResult), DeleteResult.ToJSON);
+  finally
+    DeleteResult.Free;
+  end;
+
+  const MoveResult = Call(MoveTool, '{"mailbox":"gdk","path":"","new_name":"x"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(MoveResult), MoveResult.ToJSON);
+  finally
+    MoveResult.Free;
+  end;
+
+  Assert.AreEqual(0, FTransport.RequestCount, 'The root of the drive is never read, moved or deleted');
+end;
+
+procedure TFilesToolsTests.SharePointSearchFilesDoublesApostrophes;
+begin
+  FTransport.Respond(200, '{"value":[]}');
+  const Tool: IMCPTool = TSharePointSearchFilesTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","site_id":"site1","query":"O''Brien"}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(FTransport.LastRequest.Url, 'q=''O''''Brien'')');
+  finally
+    CallResult.Free;
+  end;
 end;
 
 end.

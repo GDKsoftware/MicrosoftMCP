@@ -4,6 +4,8 @@ interface
 
 uses
   MCPServer.Types,
+  MicrosoftMcp.Mailbox.Types,
+  MicrosoftMcp.Mailbox.Service.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Mailbox.Add,
   MicrosoftMcp.Tools.Services.Interfaces;
@@ -28,6 +30,9 @@ type
 
   // A user tool: renaming must also work for a mailbox whose account is no longer linked.
   TMailboxRenameTool = class(TMicrosoftUserTool<TMailboxRenameParams, TMailboxChangeResponse>)
+  private
+    function RowOf(const Renamed: TMailbox; const UserId: string): TMailboxRow;
+
   protected
     function Run(const Params: TMailboxRenameParams; const UserId: string): TMailboxChangeResponse; override;
 
@@ -40,11 +45,13 @@ type
 implementation
 
 uses
-  MicrosoftMcp.Mailbox.Service.Interfaces,
+  System.SysUtils,
+  MCPServer.Logger,
   MicrosoftMcp.Tools.Mailbox.Types;
 
 resourcestring
   ToolDescription = 'Gives a mailbox another short name, another display name, or both.';
+  ListFailedFormat = 'Tool %s: the mailboxes could not be listed after the rename: %s';
 
 { TMailboxRenameTool }
 
@@ -61,15 +68,33 @@ function TMailboxRenameTool.Run(const Params: TMailboxRenameParams; const UserId
 begin
   const Renamed = FServices.Mailboxes.Rename(UserId, Params.Mailbox, Params.NewSlug, Params.DisplayName);
 
-  var Row := Default(TMailboxRow);
-  for var Candidate in FServices.Mailboxes.List(UserId) do
-  begin
-    if Candidate.Mailbox.Slug = Renamed.Slug then
-      Row := Candidate;
+  Result := TMailboxChangeResponse.Create;
+  Result.Mailbox := TMailboxItem.FromRow(RowOf(Renamed, UserId));
+end;
+
+function TMailboxRenameTool.RowOf(const Renamed: TMailbox; const UserId: string): TMailboxRow;
+begin
+  Result := Default(TMailboxRow);
+  Result.Mailbox := Renamed;
+  Result.Status := TMailboxStatus.Unknown;
+
+  // The rename is done; when the linked accounts cannot be read now, the answer still reports it, with status unknown.
+  var Rows: TArray<TMailboxRow>;
+  try
+    Rows := FServices.Mailboxes.List(UserId);
+  except
+    on E: Exception do
+    begin
+      TLogger.Warning(ListFailedFormat, [ToolName, E.ClassName]);
+      Exit;
+    end;
   end;
 
-  Result := TMailboxChangeResponse.Create;
-  Result.Mailbox := TMailboxItem.FromRow(Row);
+  for var Candidate in Rows do
+  begin
+    if Candidate.Mailbox.Slug = Renamed.Slug then
+      Result := Candidate;
+  end;
 end;
 
 end.

@@ -36,7 +36,8 @@ implementation
 uses
   System.SysUtils,
   MSGraph.Graph.Drive.Types,
-  MicrosoftMcp.Tools.Account.Support;
+  MicrosoftMcp.Tools.Account.Support,
+  MicrosoftMcp.Tools.Files.Support;
 
 const
   DeletedStatus = 'deleted';
@@ -63,6 +64,8 @@ end;
 
 function TOneDriveDeleteTool.Summarize(const Params: TOneDriveDeleteParams; const Mailbox: TResolvedMailbox): string;
 begin
+  TFilesSupport.GuardItemPath(Params.Path);
+
   const Drive = FServices.GraphClients.CreateDrive(Mailbox);
   const Item = Drive.GetItem(Params.Path);
 
@@ -79,6 +82,8 @@ end;
 
 function TOneDriveDeleteTool.Run(const Params: TOneDriveDeleteParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TFileActionResponse;
 begin
+  TFilesSupport.GuardItemPath(Params.Path);
+
   const Drive = FServices.GraphClients.CreateDrive(Mailbox);
   Drive.Delete(Params.Path);
 

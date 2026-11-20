@@ -28,7 +28,11 @@ type
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  MicrosoftMcp.Mailbox.Exceptions;
+
+resourcestring
+  UnknownKindFormat = 'Unknown mailbox kind "%s"; use own or shared.';
 
 const
   OwnCode = 'own';
@@ -48,7 +52,7 @@ begin
   end
   else
   begin
-    raise EConvertError.CreateFmt('Unknown mailbox kind "%s"', [Code]);
+    raise EMailboxInvalidInput.CreateFmt(UnknownKindFormat, [Code]);
   end;
 end;
 

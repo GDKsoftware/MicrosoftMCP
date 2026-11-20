@@ -25,8 +25,9 @@ type
     // Exceptions the MCP server handles itself: protocol errors, cancellation, input requests and invalid arguments.
     class function IsServerHandled(const E: Exception): Boolean; static;
 
-    // A tool result with isError and a message for Claude.
-    class function ErrorValue(const Errors: TGraphErrorTranslator; const E: Exception; const Mailbox: TMailbox): TValue; static;
+    // A tool result with isError and a message for Claude. An unexpected failure is logged with the tool and the
+    // exception class only, never its message, which may hold mail content.
+    class function ErrorValue(const Errors: TGraphErrorTranslator; const E: Exception; const Mailbox: TMailbox; const ToolName: string): TValue; static;
 
     // Serializes the response as structured content and frees it.
     class function ResponseValue(const Response: TObject): TValue; static;
@@ -40,6 +41,13 @@ type
 
     class function ConfirmationValue(const Summary, Token: string; const IsEarlierTokenRejected: Boolean): TValue; static;
 
+    // A query for $search="...": Microsoft365-4D puts it between double quotes without escaping, so a quote in the
+    // query would end the phrase early and Graph answers 400.
+    class function SearchPhrase(const Query: string): string; static;
+
+    // A value for an OData string literal ('...'), such as search(q='...'): a single quote is written twice.
+    class function ODataString(const Value: string): string; static;
+
     // Sets readOnlyHint false and the given destructiveHint and openWorldHint; MCP assumes true for both when absent.
     class procedure MarkChanging(const Annotations: TJSONObject; const IsDestructive, IsOpenWorld: Boolean); static;
   end;
@@ -48,6 +56,7 @@ implementation
 
 uses
   MCPServer.Errors,
+  MCPServer.Logger,
   MCPServer.Mrtr,
   MCPServer.Serializer,
   MCPServer.Tool.Result,
@@ -68,13 +77,21 @@ const
   ReadOnlyHint = 'readOnlyHint';
   DestructiveHint = 'destructiveHint';
   OpenWorldHint = 'openWorldHint';
+  Backslash = '';
+  EscapedBackslash = '\';
+  DoubleQuote = '"';
+  EscapedDoubleQuote = '\"';
+  SingleQuote = '''';
+  DoubledSingleQuote = '''''';
 
 resourcestring
   NoUser = 'This tool needs a signed-in user, but the request carries none.';
   NextStep = 'Nothing has been done yet. Show the summary to the user and ask for approval. Only after the user agrees, ' +
              'call this tool again with exactly the same arguments plus confirmation_token. The token is valid for 10 minutes and works once.';
-  TokenRejected = 'The confirmation_token that was passed is not valid (used, expired or issued for other arguments); this is a new one.';
+  TokenRejected = 'The confirmation_token that was passed is not valid: it was used before (also when that attempt failed), ' +
+                  'expired, or was issued for other arguments or for an item that changed since. This is a new one.';
   NoResponse = 'The tool returned no response.';
+  ToolFailedFormat = 'Tool %s failed: %s';
 
 { TToolSupport }
 
@@ -96,8 +113,12 @@ begin
              (E is EArgumentException));
 end;
 
-class function TToolSupport.ErrorValue(const Errors: TGraphErrorTranslator; const E: Exception; const Mailbox: TMailbox): TValue;
+class function TToolSupport.ErrorValue(const Errors: TGraphErrorTranslator; const E: Exception; const Mailbox: TMailbox; const ToolName: string): TValue;
 begin
+  const IsUnexpected = ((not (E is EToolError)) and Errors.IsUnexpected(E));
+  if IsUnexpected then
+    TLogger.Warning(ToolFailedFormat, [ToolName, E.ClassName]);
+
   const ToolResult = TMCPToolResult.Error(ErrorMessage(Errors, E, Mailbox));
   Result := TValue.From<TMCPToolResult>(ToolResult);
 end;
@@ -171,6 +192,16 @@ begin
     Json.AddPair(NoteMember, TokenRejected);
 
   Result := TValue.From<TJSONObject>(Json);
+end;
+
+class function TToolSupport.SearchPhrase(const Query: string): string;
+begin
+  Result := Query.Replace(Backslash, EscapedBackslash, [rfReplaceAll]).Replace(DoubleQuote, EscapedDoubleQuote, [rfReplaceAll]);
+end;
+
+class function TToolSupport.ODataString(const Value: string): string;
+begin
+  Result := Value.Replace(SingleQuote, DoubledSingleQuote, [rfReplaceAll]);
 end;
 
 class procedure TToolSupport.MarkChanging(const Annotations: TJSONObject; const IsDestructive, IsOpenWorld: Boolean);
