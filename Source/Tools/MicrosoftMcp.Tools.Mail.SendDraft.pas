@@ -25,6 +25,7 @@ type
 
   TMailSendDraftTool = class(TConfirmedMicrosoftTool<TMailSendDraftParams, TMailActionResponse>)
   protected
+    function ConfirmationState(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox): string; override;
     function Summarize(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox): string; override;
     function Run(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TMailActionResponse; override;
 
@@ -38,6 +39,7 @@ implementation
 
 uses
   System.SysUtils,
+  System.JSON,
   MicrosoftMcp.Tools.Exceptions,
   MicrosoftMcp.Tools.Mail.Support;
 
@@ -47,6 +49,18 @@ resourcestring
   SummaryFormat = 'Send the draft with subject "%s" from mailbox %s to %s.';
   NotSent = 'The draft was not sent.';
   SentStatus = 'sent';
+
+const
+  // Graph gives a draft a new changeKey on every change, so the token stops matching once the draft was edited.
+  StateFields = 'changeKey,lastModifiedDateTime';
+  SummaryFields = 'subject,toRecipients,ccRecipients,bccRecipients';
+  ChangeKeyMember = 'changeKey';
+  LastModifiedMember = 'lastModifiedDateTime';
+  SubjectMember = 'subject';
+  ToRecipientsMember = 'toRecipients';
+  CcRecipientsMember = 'ccRecipients';
+  BccRecipientsMember = 'bccRecipients';
+  StateFormat = '%s|%s';
 
 { TMailSendDraftTool }
 
@@ -59,12 +73,30 @@ begin
   MarkChanging(True, True);
 end;
 
+function TMailSendDraftTool.ConfirmationState(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox): string;
+begin
+  const Draft = TMailSupport.ReadMessageFields(FServices.GraphClients, Mailbox, Params.DraftId, StateFields);
+  try
+    const ChangeKey = Draft.GetValue<string>(ChangeKeyMember, '');
+    const LastModified = Draft.GetValue<string>(LastModifiedMember, '');
+    Result := Format(StateFormat, [ChangeKey, LastModified]);
+  finally
+    Draft.Free;
+  end;
+end;
+
 function TMailSendDraftTool.Summarize(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox): string;
 begin
-  const Draft = TMailSupport.LoadMessage(FServices.GraphClients, Mailbox, Params.DraftId);
-
-  const Recipients = TMailSupport.FormatAddresses(Draft.ToRecipients);
-  Result := Format(SummaryFormat, [Draft.Subject, TMailSupport.MailboxLabel(Mailbox), Recipients]);
+  const Draft = TMailSupport.ReadMessageFields(FServices.GraphClients, Mailbox, Params.DraftId, SummaryFields);
+  try
+    const Recipients = TMailSupport.RecipientsText(TMailSupport.RecipientsIn(Draft, ToRecipientsMember),
+                                                   TMailSupport.RecipientsIn(Draft, CcRecipientsMember),
+                                                   TMailSupport.RecipientsIn(Draft, BccRecipientsMember));
+    const Subject = Draft.GetValue<string>(SubjectMember, '');
+    Result := Format(SummaryFormat, [Subject, TMailSupport.MailboxLabel(Mailbox), Recipients]);
+  finally
+    Draft.Free;
+  end;
 end;
 
 function TMailSendDraftTool.Run(const Params: TMailSendDraftParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TMailActionResponse;

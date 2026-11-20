@@ -23,7 +23,12 @@ type
     property DraftId: string read FDraftId write FDraftId;
   end;
 
+  // Deletes without confirmation, so it first checks that the message is a draft: a DELETE in Graph removes any
+  // message for good, while mail_delete moves one to Deleted Items after a confirmation.
   TMailDeleteDraftTool = class(TMicrosoftTool<TMailDeleteDraftParams, TMailActionResponse>)
+  private
+    procedure GuardIsDraft(const Graph: TGraphHttpClient; const MessageId: string);
+
   protected
     function Run(const Params: TMailDeleteDraftParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TMailActionResponse; override;
 
@@ -36,13 +41,19 @@ type
 implementation
 
 uses
+  System.JSON,
   MicrosoftMcp.Tools.Exceptions,
   MicrosoftMcp.Tools.Mail.Support;
 
 resourcestring
-  ToolDescription = 'Deletes a draft permanently. It cannot be used on a message that was sent; use mail_delete for that.';
+  ToolDescription = 'Deletes a draft permanently. Any message that is not a draft is refused; use mail_delete for those.';
   NotDeleted = 'The draft was not deleted.';
   DeletedStatus = 'deleted';
+  NotADraft = 'This message is not a draft, so mail_delete_draft does not delete it. Use mail_delete, which moves it to ' +
+              'Deleted Items after the user confirmed.';
+
+const
+  IsDraftField = 'isDraft';
 
 { TMailDeleteDraftTool }
 
@@ -57,11 +68,25 @@ end;
 
 function TMailDeleteDraftTool.Run(const Params: TMailDeleteDraftParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TMailActionResponse;
 begin
+  GuardIsDraft(Graph, Params.DraftId);
+
   const IsDeleted = TMailSupport.Client(Graph).DeleteDraft(Params.DraftId);
   if not IsDeleted then
     raise EToolError.Create(NotDeleted);
 
   Result := TMailActionResponse.Done(DeletedStatus);
+end;
+
+procedure TMailDeleteDraftTool.GuardIsDraft(const Graph: TGraphHttpClient; const MessageId: string);
+begin
+  const Message = TMailSupport.ReadMessageFields(Graph, MessageId, IsDraftField);
+  try
+    const IsDraft = Message.GetValue<Boolean>(IsDraftField, False);
+    if not IsDraft then
+      raise EToolArgumentError.Create(NotADraft);
+  finally
+    Message.Free;
+  end;
 end;
 
 end.

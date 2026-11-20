@@ -4,6 +4,7 @@ interface
 
 uses
   System.SysUtils,
+  System.JSON,
   MSGraph.Graph.Http,
   MSGraph.Graph.Mail.Types,
   MSGraph.Graph.Mail.Interfaces,
@@ -16,6 +17,7 @@ type
   private
     class function WellKnownFolder(const Name: string; out GraphName: string): Boolean; static;
     class function Join(const Values: TArray<string>): string; static;
+    class function AddressOf(const Recipient: TJSONValue): TEmailAddress; static;
 
   public
     const HtmlBodyType = 'html';
@@ -39,6 +41,14 @@ type
     // For the summaries of confirmed tools: reads the message the confirmation is about.
     class function LoadMessage(const GraphClients: IGraphClientFactory; const Mailbox: TResolvedMailbox; const MessageId: string): TMailMessage; static;
 
+    // Reads the given fields of a message ($select) straight from Graph, for fields that TMailMessage lacks
+    // (isDraft, bccRecipients, changeKey). The caller frees the result.
+    class function ReadMessageFields(const Graph: TGraphHttpClient; const MessageId, Fields: string): TJSONObject; overload; static;
+    class function ReadMessageFields(const GraphClients: IGraphClientFactory; const Mailbox: TResolvedMailbox; const MessageId, Fields: string): TJSONObject; overload; static;
+
+    // The recipients in a recipients array member of a Graph message (toRecipients, ccRecipients, bccRecipients).
+    class function RecipientsIn(const Message: TJSONObject; const Member: string): TArray<string>; static;
+
     class function MailboxLabel(const Resolved: TResolvedMailbox): string; static;
     class function RecipientsText(const ToRecipients, CcRecipients, BccRecipients: TArray<string>): string; static;
   end;
@@ -46,6 +56,7 @@ type
 implementation
 
 uses
+  System.NetEncoding,
   MSGraph.Graph.Mail,
   MicrosoftMcp.Tools.Exceptions;
 
@@ -60,6 +71,13 @@ resourcestring
   CcText = ', cc %s';
   BccText = ', bcc %s';
   AddressFormat = '%s <%s>';
+
+const
+  MessageEndpointFormat = '%s/messages/%s';
+  SelectFormat = '$select=%s';
+  EmailAddressMember = 'emailAddress';
+  NameMember = 'name';
+  AddressMember = 'address';
 
 { TMailSupport }
 
@@ -161,6 +179,48 @@ begin
   finally
     Graph.Free;
   end;
+end;
+
+class function TMailSupport.ReadMessageFields(const GraphClients: IGraphClientFactory; const Mailbox: TResolvedMailbox; const MessageId, Fields: string): TJSONObject;
+begin
+  const Graph = GraphClients.Create(Mailbox);
+  try
+    Result := ReadMessageFields(Graph, MessageId, Fields);
+  finally
+    Graph.Free;
+  end;
+end;
+
+class function TMailSupport.ReadMessageFields(const Graph: TGraphHttpClient; const MessageId, Fields: string): TJSONObject;
+begin
+  const Endpoint = Format(MessageEndpointFormat, [Graph.GetUserPrefix, TNetEncoding.URL.Encode(MessageId)]);
+  Result := Graph.Get(Endpoint, Format(SelectFormat, [Fields]));
+end;
+
+class function TMailSupport.RecipientsIn(const Message: TJSONObject; const Member: string): TArray<string>;
+begin
+  Result := [];
+
+  var Recipients: TJSONArray;
+  if not Message.TryGetValue<TJSONArray>(Member, Recipients) then
+    Exit;
+
+  for var Recipient in Recipients do
+  begin
+    Result := Result + [FormatAddress(AddressOf(Recipient))];
+  end;
+end;
+
+class function TMailSupport.AddressOf(const Recipient: TJSONValue): TEmailAddress;
+begin
+  Result := Default(TEmailAddress);
+
+  var EmailAddress: TJSONObject;
+  if not Recipient.TryGetValue<TJSONObject>(EmailAddressMember, EmailAddress) then
+    Exit;
+
+  Result.Name    := EmailAddress.GetValue<string>(NameMember, '');
+  Result.Address := EmailAddress.GetValue<string>(AddressMember, '');
 end;
 
 class function TMailSupport.MailboxLabel(const Resolved: TResolvedMailbox): string;

@@ -75,6 +75,21 @@ type
     procedure SendDraftSummaryNamesRecipients;
 
     [Test]
+    procedure SendDraftSummaryNamesCcAndBcc;
+
+    [Test]
+    procedure SendDraftWithTokenSendsUnchangedDraft;
+
+    [Test]
+    procedure UpdatedDraftInvalidatesToken;
+
+    [Test]
+    procedure DeleteDraftRefusesNonDraft;
+
+    [Test]
+    procedure DeleteDraftDeletesDraft;
+
+    [Test]
     procedure ForwardSummaryNamesMailboxAndRecipients;
 
     [Test]
@@ -137,6 +152,11 @@ const
                 '"toRecipients":[{"emailAddress":{"name":"Kees","address":"kees@gdk.example.test"}}],' +
                 '"receivedDateTime":"2026-11-01T09:00:00Z","isRead":false,"hasAttachments":true,"bodyPreview":"Hello Kees",' +
                 '"body":{"contentType":"text","content":"SECRET BODY TEXT"}}';
+  DraftFormat = '{"id":"d1","subject":"Offer","isDraft":true,"changeKey":"%s","lastModifiedDateTime":"2026-11-02T10:00:00Z",' +
+                '"toRecipients":[{"emailAddress":{"name":"Anna","address":"anna@other.example.test"}}],' +
+                '"ccRecipients":[{"emailAddress":{"address":"cc@other.example.test"}}],' +
+                '"bccRecipients":[{"emailAddress":{"address":"hidden@outside.example.test"}}]}';
+  SendDraftArguments = '{"mailbox":"gdk","draft_id":"d1"}';
 
 { TMailToolsTests }
 
@@ -465,7 +485,102 @@ begin
     const Summary = TToolCall.Structured(CallResult).GetValue<string>('summary');
     Assert.Contains(Summary, 'kees@gdk.example.test');
     Assert.Contains(Summary, 'Quarterly numbers');
-    Assert.AreEqual(1, FTransport.RequestCount, 'Only the draft is read; nothing is sent');
+    for var Index := 0 to FTransport.RequestCount - 1 do
+    begin
+      Assert.AreEqual('GET', FTransport.RequestAt(Index).Method, 'Only the draft is read; nothing is sent');
+    end;
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.SendDraftSummaryNamesCcAndBcc;
+begin
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  const Tool: IMCPTool = TMailSendDraftTool.Create(FServices);
+
+  const CallResult = Call(Tool, SendDraftArguments);
+  try
+    const Summary = TToolCall.Structured(CallResult).GetValue<string>('summary');
+    Assert.Contains(Summary, 'anna@other.example.test');
+    Assert.Contains(Summary, 'cc@other.example.test');
+    Assert.Contains(Summary, 'hidden@outside.example.test');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.SendDraftWithTokenSendsUnchangedDraft;
+begin
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  FTransport.Respond(202, '');
+  const Tool: IMCPTool = TMailSendDraftTool.Create(FServices);
+
+  const Answer = Confirm(Tool, SendDraftArguments);
+
+  Assert.Contains(Answer, 'sent');
+  Assert.AreEqual('POST', FTransport.LastRequest.Method);
+  Assert.Contains(FTransport.LastRequest.Url, '/messages/d1/send');
+end;
+
+procedure TMailToolsTests.UpdatedDraftInvalidatesToken;
+begin
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  FTransport.Respond(200, Format(DraftFormat, ['ck1']));
+  FTransport.Respond(200, Format(DraftFormat, ['ck2']));
+  const Tool: IMCPTool = TMailSendDraftTool.Create(FServices);
+
+  const FirstAnswer = Call(Tool, SendDraftArguments);
+  try
+    const Token = TToolCall.Structured(FirstAnswer).GetValue<string>('confirmation_token');
+
+    const SecondAnswer = Call(Tool, Format('{"mailbox":"gdk","draft_id":"d1","confirmation_token":"%s"}', [Token]));
+    try
+      Assert.IsTrue(TToolCall.Structured(SecondAnswer).GetValue<Boolean>('confirmation_required'), SecondAnswer.ToJSON);
+      for var Index := 0 to FTransport.RequestCount - 1 do
+      begin
+        Assert.AreEqual('GET', FTransport.RequestAt(Index).Method, 'A draft that changed after the summary must not be sent');
+      end;
+    finally
+      SecondAnswer.Free;
+    end;
+  finally
+    FirstAnswer.Free;
+  end;
+end;
+
+procedure TMailToolsTests.DeleteDraftRefusesNonDraft;
+begin
+  FTransport.Respond(200, '{"id":"m1","isDraft":false}');
+  FTransport.Respond(204, '');
+  const Tool: IMCPTool = TMailDeleteDraftTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","draft_id":"m1"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'mail_delete');
+    Assert.AreEqual(1, FTransport.RequestCount, 'A message that is not a draft must not be deleted');
+    Assert.AreEqual('GET', FTransport.LastRequest.Method);
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.DeleteDraftDeletesDraft;
+begin
+  FTransport.Respond(200, '{"id":"d1","isDraft":true}');
+  FTransport.Respond(204, '');
+  const Tool: IMCPTool = TMailDeleteDraftTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","draft_id":"d1"}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.AreEqual(2, FTransport.RequestCount);
+    Assert.Contains(FTransport.RequestAt(0).Url, 'isDraft');
+    Assert.AreEqual('DELETE', FTransport.LastRequest.Method);
+    Assert.Contains(FTransport.LastRequest.Url, '/messages/d1');
   finally
     CallResult.Free;
   end;
