@@ -41,6 +41,7 @@ implementation
 uses
   System.Net.URLClient,
   MSGraph.OAuth2.Types,
+  MSGraph.Graph.Drive.Exceptions,
   MicrosoftMcp.Mailbox.Exceptions,
   MicrosoftMcp.Graph.Exceptions;
 
@@ -54,6 +55,7 @@ const
   StatusUnauthorized = 401;
   StatusForbidden = 403;
   StatusNotFound = 404;
+  StatusConflict = 409;
   StatusTooManyRequests = 429;
   StatusServerError = 500;
 
@@ -64,6 +66,7 @@ resourcestring
                           'ask the user to give consent again on the account page: %s';
   UnauthorizedFormat = 'Microsoft rejected the access token of mailbox "%s" (HTTP 401). Ask the user to reconnect the account on the account page: %s';
   NotFoundMessage = 'Microsoft Graph: item not found (HTTP 404). Check the id; the item may have been moved or deleted.';
+  ConflictMessage = 'Microsoft Graph refused the change because of a conflict (HTTP 409): an item with that name already exists or the item is locked.';
   ThrottledMessage = 'Microsoft Graph throttled the request (HTTP 429); retry after %d s.';
   ThrottledUnknownMessage = 'Microsoft Graph throttled the request (HTTP 429); retry later.';
   ServerErrorFormat = 'Microsoft Graph is temporarily unavailable (HTTP %d); try again later.';
@@ -89,6 +92,18 @@ begin
   begin
     const HttpError = EGraphHttpError(E);
     Exit(DescribeStatus(HttpError.StatusCode, HttpError.RetryAfterSeconds, Mailbox));
+  end;
+
+  if E is EGraphDriveValidationError then
+    Exit(E.Message);
+
+  if E is EGraphDriveError then
+  begin
+    const DriveStatus = EGraphDriveError(E).StatusCode;
+    if DriveStatus <> StatusUnknown then
+      Exit(DescribeStatus(DriveStatus, NoRetryAfter, Mailbox));
+
+    Exit(Format(ExceptionFailureFormat, [E.ClassName]));
   end;
 
   if E is EGraphApiException then
@@ -132,6 +147,7 @@ begin
     StatusUnauthorized    : Result := Format(UnauthorizedFormat, [Mailbox.Slug, FAccountPageUrl]);
     StatusForbidden       : Result := DescribeAccessDenied(Mailbox);
     StatusNotFound        : Result := NotFoundMessage;
+    StatusConflict        : Result := ConflictMessage;
     StatusTooManyRequests : Result := DescribeThrottled(RetryAfterSeconds);
   else
     if StatusCode >= StatusServerError then

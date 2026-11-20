@@ -5,6 +5,7 @@ interface
 uses
   MSGraph.Graph.Http,
   MSGraph.Graph.Http.Interfaces,
+  MSGraph.Graph.Drive.Interfaces,
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Graph.ClientFactory.Interfaces;
 
@@ -20,12 +21,16 @@ type
 
     function CreateClient(const Resolved: TResolvedMailbox): TGraphHttpClient;
     function IGraphClientFactory.Create = CreateClient;
+
+    function CreateDrive(const Resolved: TResolvedMailbox): IGraphDriveClient;
   end;
 
 implementation
 
 uses
   MSGraph.Graph.Http.Transport,
+  MSGraph.Graph.Drive.Types,
+  MSGraph.Graph.Drive,
   MicrosoftMcp.Mailbox.Types,
   MicrosoftMcp.Graph.Transport.Raising;
 
@@ -50,6 +55,11 @@ begin
   const IsShared = (Resolved.Mailbox.Kind = TMailboxKind.Shared);
   if IsShared then
     Result.MailboxAddress := Resolved.Mailbox.Address;
+end;
+
+function TGraphClientFactory.CreateDrive(const Resolved: TResolvedMailbox): IGraphDriveClient;
+begin
+  Result := TGraphDriveClient.Create(TGraphDriveConfig.ForMyDrive(Resolved.AccessToken), FTransport);
 end;
 
 end.

@@ -38,6 +38,8 @@ type
     procedure RegisterMailboxTools;
     procedure RegisterMailTools;
     procedure RegisterCalendarTools;
+    procedure RegisterContactsTools;
+    procedure RegisterFilesTools;
     procedure BuildHost;
     procedure LogStarted;
 
@@ -103,7 +105,26 @@ uses
   MicrosoftMcp.Tools.Calendar.Delete,
   MicrosoftMcp.Tools.Calendar.Respond,
   MicrosoftMcp.Tools.Calendar.ProposeTime,
-  MicrosoftMcp.Tools.Calendar.Availability;
+  MicrosoftMcp.Tools.Calendar.Availability,
+  MicrosoftMcp.Tools.Contacts.Search,
+  MicrosoftMcp.Tools.Contacts.Get,
+  MicrosoftMcp.Tools.Contacts.Create,
+  MicrosoftMcp.Tools.Contacts.Update,
+  MicrosoftMcp.Tools.Contacts.Delete,
+  MicrosoftMcp.Tools.People.Search,
+  MicrosoftMcp.Tools.People.Relevant,
+  MicrosoftMcp.Tools.SharePoint.SearchSites,
+  MicrosoftMcp.Tools.SharePoint.ListFiles,
+  MicrosoftMcp.Tools.SharePoint.SearchFiles,
+  MicrosoftMcp.Tools.SharePoint.ReadFile,
+  MicrosoftMcp.Tools.SharePoint.ListPages,
+  MicrosoftMcp.Tools.SharePoint.ReadPage,
+  MicrosoftMcp.Tools.OneDrive.List,
+  MicrosoftMcp.Tools.OneDrive.Read,
+  MicrosoftMcp.Tools.OneDrive.Upload,
+  MicrosoftMcp.Tools.OneDrive.CreateFolder,
+  MicrosoftMcp.Tools.OneDrive.Move,
+  MicrosoftMcp.Tools.OneDrive.Delete;
 
 const
   LoopbackAddress = '127.0.0.1';
@@ -231,6 +252,8 @@ begin
   RegisterMailboxTools;
   RegisterMailTools;
   RegisterCalendarTools;
+  RegisterContactsTools;
+  RegisterFilesTools;
 end;
 
 procedure TServerComposition.RegisterMailboxTools;
@@ -438,6 +461,130 @@ begin
     function: IMCPTool
     begin
       Result := TCalendarAvailabilityTool.Create(Services);
+    end);
+end;
+
+procedure TServerComposition.RegisterContactsTools;
+begin
+  const Services = FToolServices;
+
+  TMCPRegistry.RegisterTool(TContactsSearchTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TContactsSearchTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TContactsGetTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TContactsGetTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TContactsCreateTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TContactsCreateTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TContactsUpdateTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TContactsUpdateTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TContactsDeleteTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TContactsDeleteTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TPeopleSearchTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TPeopleSearchTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TPeopleRelevantTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TPeopleRelevantTool.Create(Services);
+    end);
+end;
+
+procedure TServerComposition.RegisterFilesTools;
+begin
+  const Services = FToolServices;
+
+  TMCPRegistry.RegisterTool(TSharePointSearchSitesTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointSearchSitesTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TSharePointListFilesTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointListFilesTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TSharePointSearchFilesTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointSearchFilesTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TSharePointReadFileTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointReadFileTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TSharePointListPagesTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointListPagesTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TSharePointReadPageTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TSharePointReadPageTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveListTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveListTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveReadTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveReadTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveUploadTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveUploadTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveCreateFolderTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveCreateFolderTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveMoveTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveMoveTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TOneDriveDeleteTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TOneDriveDeleteTool.Create(Services);
     end);
 end;
 

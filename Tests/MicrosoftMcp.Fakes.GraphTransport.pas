@@ -24,6 +24,8 @@ type
     procedure Respond(const StatusCode: Integer; const Content: string); overload;
     procedure Respond(const StatusCode: Integer; const Content: string; const Headers: TArray<TNetHeader>); overload;
 
+    procedure RespondBytes(const StatusCode: Integer; const Bytes: TBytes);
+
     function RequestCount: Integer;
     function LastRequest: TGraphHttpRequest;
     function RequestAt(const Index: Integer): TGraphHttpRequest;
@@ -54,7 +56,17 @@ begin
   var Response := Default(TGraphHttpResponse);
   Response.StatusCode := StatusCode;
   Response.Content := Content;
+  Response.ContentBytes := TEncoding.UTF8.GetBytes(Content);
   Response.Headers := Headers;
+
+  FResponses.Add(Response);
+end;
+
+procedure TFakeGraphTransport.RespondBytes(const StatusCode: Integer; const Bytes: TBytes);
+begin
+  var Response := Default(TGraphHttpResponse);
+  Response.StatusCode := StatusCode;
+  Response.ContentBytes := Bytes;
 
   FResponses.Add(Response);
 end;
