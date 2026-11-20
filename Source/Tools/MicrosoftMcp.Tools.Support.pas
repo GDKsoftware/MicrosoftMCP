@@ -77,8 +77,8 @@ const
   ReadOnlyHint = 'readOnlyHint';
   DestructiveHint = 'destructiveHint';
   OpenWorldHint = 'openWorldHint';
-  Backslash = '';
-  EscapedBackslash = '\';
+  Backslash = '\';
+  EscapedBackslash = '\\';
   DoubleQuote = '"';
   EscapedDoubleQuote = '\"';
   SingleQuote = '''';

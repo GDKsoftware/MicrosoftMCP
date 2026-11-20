@@ -43,6 +43,10 @@ type
 
     [Test]
     procedure SearchEscapesQuotesInQuery;
+    [Test]
+    procedure SearchEscapesTrailingBackslash;
+    [Test]
+    procedure SearchEscapesBackslashBeforeQuote;
 
     [Test]
     procedure ReadReturnsTextBodyByDefault;
@@ -751,6 +755,34 @@ begin
   try
     Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
     Assert.Contains(FTransport.LastRequest.Url, '%5C%22Q3');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.SearchEscapesTrailingBackslash;
+begin
+  FTransport.Respond(200, EmptyList);
+  const Tool: IMCPTool = TMailSearchTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","query":"C:\\temp\\"}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(FTransport.LastRequest.Url, 'temp%5C%5C"');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.SearchEscapesBackslashBeforeQuote;
+begin
+  FTransport.Respond(200, EmptyList);
+  const Tool: IMCPTool = TMailSearchTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","query":"a\\\"b"}');
+  try
+    Assert.IsFalse(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(FTransport.LastRequest.Url, 'a%5C%5C%5C%22b');
   finally
     CallResult.Free;
   end;
