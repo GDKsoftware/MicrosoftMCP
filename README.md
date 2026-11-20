@@ -159,6 +159,7 @@ On Debian or Ubuntu: `sudo apt-get install -y libssl3 libcurl4 libpq5`.
 
 - Mail, calendar and file content, subjects, addresses and tokens are never written to the log.
 - Anything that sends, deletes or reaches other people goes through the two-step confirmation described above. A token cannot be reused, used for other arguments, by another user or after it expired; a rejected attempt does not carry out the action.
+- `mail_move` refuses the well-known folders `deleteditems` and `recoverableitems*` and points to `mail_delete`, which asks for confirmation. A folder id that happens to be the Deleted Items folder is not recognised and is still accepted, so a move by folder id can delete a message without confirmation.
 - Graph errors are translated into messages that say what to do (reconnect the account, grant FullAccess, retry later).
 - Users are authenticated only through the auth server: every request needs a token issued for this server's resource URI. Microsoft refresh tokens stay in the auth server; this server only handles short-lived access tokens.
 - The endpoint listens on `127.0.0.1`. Publish it through a reverse proxy with TLS, and expose nothing but `/mcp` and the protected-resource metadata.

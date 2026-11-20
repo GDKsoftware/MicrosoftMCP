@@ -107,6 +107,8 @@ type
 
     [Test]
     procedure MoveToDeletedItemsPointsToMailDelete;
+    [Test]
+    procedure MoveToRecoverableItemsPointsToMailDelete;
 
     [Test]
     procedure AttachmentMissingFromListIsNotDownloaded;
@@ -721,6 +723,21 @@ begin
   const Tool: IMCPTool = TMailMoveTool.Create(FServices);
 
   const CallResult = Call(Tool, '{"mailbox":"gdk","message_id":"m1","destination_folder":"DeletedItems"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'mail_delete');
+    Assert.AreEqual(0, FTransport.RequestCount);
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TMailToolsTests.MoveToRecoverableItemsPointsToMailDelete;
+begin
+  FTransport.Respond(201, '{"id":"m1-moved"}');
+  const Tool: IMCPTool = TMailMoveTool.Create(FServices);
+
+  const CallResult = Call(Tool, '{"mailbox":"gdk","message_id":"m1","destination_folder":"RecoverableItemsDeletions"}');
   try
     Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
     Assert.Contains(TToolCall.Text(CallResult), 'mail_delete');
