@@ -5,7 +5,8 @@ interface
 uses
   MCPServer.Types,
   MSGraph.Graph.SharePoint.Types,
-  MicrosoftMcp.Tools.Base;
+  MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TSiteItem = record
@@ -95,6 +96,7 @@ type
     FSiteId: string;
 
   public
+    [GraphId]
     [SchemaName('site_id')]
     [SchemaDescription('Id of the site, from sharepoint_search_sites')]
     property SiteId: string read FSiteId write FSiteId;

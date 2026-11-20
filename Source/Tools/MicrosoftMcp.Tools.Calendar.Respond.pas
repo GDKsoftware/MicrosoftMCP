@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Calendar.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TCalendarRespondParams = class(TConfirmableToolParams)
@@ -21,6 +22,7 @@ type
   public
     constructor Create;
 
+    [GraphId]
     [SchemaName('event_id')]
     [SchemaDescription('Id of the event, from calendar_list or calendar_search')]
     property EventId: string read FEventId write FEventId;

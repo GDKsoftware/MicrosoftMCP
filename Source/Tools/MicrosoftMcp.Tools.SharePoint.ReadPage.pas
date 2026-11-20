@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.SharePoint.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TSharePointReadPageParams = class(TSiteParams)
@@ -16,6 +17,7 @@ type
     FPageId: string;
 
   public
+    [GraphId]
     [SchemaName('page_id')]
     [SchemaDescription('Id of the page, from sharepoint_list_pages')]
     property PageId: string read FPageId write FPageId;

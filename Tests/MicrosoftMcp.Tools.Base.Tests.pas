@@ -10,6 +10,7 @@ uses
   MicrosoftMcp.Mailbox.Interfaces,
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId,
   MicrosoftMcp.Tools.Services.Interfaces,
   MicrosoftMcp.Fakes.GraphTransport,
   MicrosoftMcp.Fakes.UpstreamAccounts;
@@ -41,6 +42,7 @@ type
     FMessageId: string;
 
   public
+    [GraphId]
     [SchemaName('message_id')]
     property MessageId: string read FMessageId write FMessageId;
   end;
@@ -60,6 +62,12 @@ type
 
   public
     constructor Create(const Services: IToolServices);
+  end;
+
+  // Reads the message before it summarizes, as the mail tools do.
+  TDeleteLoadedMessageTool = class(TDeleteMessageTool)
+  protected
+    function Summarize(const Params: TDeleteMessageParams; const Mailbox: TResolvedMailbox): string; override;
   end;
 
   [TestFixture]
@@ -115,6 +123,18 @@ type
 
     [Test]
     procedure ConfirmationTokenParameterIsSnakeCase;
+
+    [Test]
+    procedure IdWithPathIsRefusedBeforeGraph;
+
+    [Test]
+    procedure EveryIdParameterIsGuarded;
+
+    [Test]
+    procedure SummaryOnSharedMailbox403ExplainsFullAccess;
+
+    [Test]
+    procedure TokenDoesNotFollowSlugToOtherMailbox;
   end;
 
 implementation
@@ -122,6 +142,7 @@ implementation
 uses
   System.SysUtils,
   System.JSON,
+  System.Rtti,
   MCPAuth.Clock,
   MCPAuth.Secret.Token,
   MCPAuth.Client.UpstreamAccounts.Interfaces,
@@ -187,6 +208,20 @@ begin
 
   Result := TDeleteMessageResponse.Create;
   Result.Deleted := Params.MessageId;
+end;
+
+{ TDeleteLoadedMessageTool }
+
+function TDeleteLoadedMessageTool.Summarize(const Params: TDeleteMessageParams; const Mailbox: TResolvedMailbox): string;
+begin
+  const Graph = FServices.GraphClients.Create(Mailbox);
+  try
+    Graph.Get(Format('%s/messages/%s', [Graph.GetUserPrefix, Params.MessageId])).Free;
+  finally
+    Graph.Free;
+  end;
+
+  Result := inherited Summarize(Params, Mailbox);
 end;
 
 { TToolBaseTests }
@@ -418,6 +453,84 @@ begin
     Assert.IsNotNull(Properties.GetValue('mailbox'));
   finally
     InputSchema.Free;
+  end;
+end;
+
+procedure TToolBaseTests.IdWithPathIsRefusedBeforeGraph;
+begin
+  FTransport.Respond(204, '');
+  const Tool: IMCPTool = TDeleteMessageTool.Create(FServices);
+
+  const CallResult = TToolCall.Run(Tool, Kees, '{"mailbox":"work","message_id":"x/../../messages/d1/send?"}');
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'message_id');
+    Assert.AreEqual(0, FTransport.RequestCount);
+  finally
+    CallResult.Free;
+  end;
+end;
+
+// Every parameter named *_id of a tool reaches a Graph URL path, so each must carry [GraphId].
+procedure TToolBaseTests.EveryIdParameterIsGuarded;
+begin
+  var Unguarded := '';
+  var CheckedCount := 0;
+
+  const Context = TRttiContext.Create;
+  for var RttiType in Context.GetTypes do
+  begin
+    const IsParams = ((RttiType is TRttiInstanceType) and TRttiInstanceType(RttiType).MetaclassType.InheritsFrom(TMicrosoftToolParams));
+    if not IsParams then
+      Continue;
+
+    for var Prop in RttiType.GetProperties do
+    begin
+      const SchemaName = Prop.GetAttribute<SchemaNameAttribute>;
+      const IsIdParameter = (Assigned(SchemaName) and SchemaName.Name.EndsWith('_id'));
+      if not IsIdParameter then
+        Continue;
+
+      Inc(CheckedCount);
+      if Prop.GetAttribute<GraphIdAttribute> = nil then
+        Unguarded := Unguarded + Format(' %s.%s', [RttiType.Name, Prop.Name]);
+    end;
+  end;
+
+  Assert.IsTrue(CheckedCount > 10, 'The tool parameter classes must be linked into the test program');
+  Assert.AreEqual('', Unguarded, 'Id parameters without [GraphId]');
+end;
+
+procedure TToolBaseTests.SummaryOnSharedMailbox403ExplainsFullAccess;
+begin
+  FTransport.Respond(403, '{"error":{"code":"ErrorAccessDenied","message":"Access is denied."}}');
+  const Tool: IMCPTool = TDeleteLoadedMessageTool.Create(FServices);
+
+  const CallResult = TToolCall.Run(Tool, Kees, DeleteArguments);
+  try
+    Assert.IsTrue(TToolCall.IsError(CallResult), CallResult.ToJSON);
+    Assert.Contains(TToolCall.Text(CallResult), 'FullAccess');
+    Assert.Contains(TToolCall.Text(CallResult), 'work');
+  finally
+    CallResult.Free;
+  end;
+end;
+
+procedure TToolBaseTests.TokenDoesNotFollowSlugToOtherMailbox;
+begin
+  FTransport.Respond(204, '');
+  const Tool: IMCPTool = TDeleteMessageTool.Create(FServices);
+  const Token = ConfirmationTokenOf(Tool, DeleteArguments);
+
+  FMailboxes.Delete(Kees, 'work');
+  AddMailbox(Kees, 'work', 'board@example.test', KeesAccountKey);
+
+  const CallResult = TToolCall.Run(Tool, Kees, Format(DeleteWithTokenFormat, ['AAMk1', Token]));
+  try
+    Assert.IsTrue(TToolCall.Structured(CallResult).GetValue<Boolean>('confirmation_required'));
+    Assert.AreEqual(0, FTransport.RequestCount, 'A token for one mailbox must not act on another that took over its short name');
+  finally
+    CallResult.Free;
   end;
 end;
 

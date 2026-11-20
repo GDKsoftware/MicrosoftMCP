@@ -34,6 +34,10 @@ type
     // The hash of the arguments as the tool received them, without confirmation_token and with sorted keys.
     class function ArgumentsHash(const Params: TObject): string; static;
 
+    // The arguments hash extended with the mailbox behind the short name (account and address) and a state of the
+    // object that the confirmation is about.
+    class function ConfirmationHash(const Params: TObject; const Mailbox: TMailbox; const State: string): string; static;
+
     class function ConfirmationValue(const Summary, Token: string; const IsEarlierTokenRejected: Boolean): TValue; static;
 
     // Sets readOnlyHint false and the given destructiveHint and openWorldHint; MCP assumes true for both when absent.
@@ -56,6 +60,11 @@ const
   ConfirmationTokenMember = 'confirmation_token';
   NextStepMember = 'next_step';
   NoteMember = 'note';
+  // Starts with characters a parameter name cannot have, so it never collides with an argument.
+  BindingMember = '$binding';
+  AccountKeyMember = 'account_key';
+  AddressMember = 'address';
+  StateMember = 'state';
   ReadOnlyHint = 'readOnlyHint';
   DestructiveHint = 'destructiveHint';
   OpenWorldHint = 'openWorldHint';
@@ -126,6 +135,24 @@ begin
   const Arguments = TJSONObject.Create;
   try
     TMCPSerializer.Serialize(Params, Arguments);
+    Result := TConfirmationArguments.Hash(Arguments);
+  finally
+    Arguments.Free;
+  end;
+end;
+
+class function TToolSupport.ConfirmationHash(const Params: TObject; const Mailbox: TMailbox; const State: string): string;
+begin
+  const Arguments = TJSONObject.Create;
+  try
+    TMCPSerializer.Serialize(Params, Arguments);
+
+    const Binding = TJSONObject.Create;
+    Arguments.AddPair(BindingMember, Binding);
+    Binding.AddPair(AccountKeyMember, Mailbox.AccountKey);
+    Binding.AddPair(AddressMember, Mailbox.Address.ToLower);
+    Binding.AddPair(StateMember, State);
+
     Result := TConfirmationArguments.Hash(Arguments);
   finally
     Arguments.Free;

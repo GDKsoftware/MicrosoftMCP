@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Files.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TOneDriveMoveParams = class(TMicrosoftToolParams)
@@ -22,6 +23,7 @@ type
     property Path: string read FPath write FPath;
 
     [Optional]
+    [GraphId]
     [SchemaName('new_parent_id')]
     [SchemaDescription('Id of the folder to move the item to (the id of a folder from onedrive_list); empty keeps the current folder')]
     property NewParentId: string read FNewParentId write FNewParentId;

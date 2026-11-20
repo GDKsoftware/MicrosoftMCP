@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Contacts.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TContactsUpdateParams = class(TContactFieldsParams)
@@ -16,6 +17,7 @@ type
     FContactId: string;
 
   public
+    [GraphId]
     [SchemaName('contact_id')]
     [SchemaDescription('Id of the contact, from contacts_search')]
     property ContactId: string read FContactId write FContactId;

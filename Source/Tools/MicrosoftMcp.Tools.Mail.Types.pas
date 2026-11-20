@@ -5,7 +5,8 @@ interface
 uses
   MCPServer.Types,
   MSGraph.Graph.Mail.Types,
-  MicrosoftMcp.Tools.Base;
+  MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   // A message as the list tools show it: never the body, only the preview.
@@ -74,6 +75,7 @@ type
     FMessageId: string;
 
   public
+    [GraphId]
     [SchemaName('message_id')]
     [SchemaDescription('Id of the message, from mail_search or mail_list')]
     property MessageId: string read FMessageId write FMessageId;
@@ -85,6 +87,7 @@ type
     FMessageId: string;
 
   public
+    [GraphId]
     [SchemaName('message_id')]
     [SchemaDescription('Id of the message, from mail_search or mail_list')]
     property MessageId: string read FMessageId write FMessageId;

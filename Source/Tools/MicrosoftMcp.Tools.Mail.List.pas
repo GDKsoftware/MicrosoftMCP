@@ -7,6 +7,7 @@ uses
   MSGraph.Graph.Http,
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId,
   MicrosoftMcp.Tools.Mail.Types,
   MicrosoftMcp.Tools.Services.Interfaces;
 
@@ -19,6 +20,7 @@ type
 
   public
     [Optional]
+    [GraphId]
     [SchemaDescription('Folder: inbox (default), archive, deleteditems, junkemail, drafts, sentitems or a folder id from mail_list_folders')]
     property Folder: string read FFolder write FFolder;
 

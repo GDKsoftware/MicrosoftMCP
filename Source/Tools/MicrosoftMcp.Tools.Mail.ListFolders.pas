@@ -8,7 +8,8 @@ uses
   MSGraph.Graph.Mail.Types,
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TMailListFoldersParams = class(TMicrosoftToolParams)
@@ -17,6 +18,7 @@ type
 
   public
     [Optional]
+    [GraphId]
     [SchemaName('parent_folder_id')]
     [SchemaDescription('List the subfolders of this folder (an id, or inbox, archive, ...). Empty lists the top-level folders')]
     property ParentFolderId: string read FParentFolderId write FParentFolderId;

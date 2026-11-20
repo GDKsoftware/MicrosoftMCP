@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Mail.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TMailUpdateDraftParams = class(TMicrosoftToolParams)
@@ -22,6 +23,7 @@ type
     FBodyType: string;
 
   public
+    [GraphId]
     [SchemaName('draft_id')]
     [SchemaDescription('Id of the draft, from mail_create_draft')]
     property DraftId: string read FDraftId write FDraftId;

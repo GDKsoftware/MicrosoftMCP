@@ -8,7 +8,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Mail.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TMailSendDraftParams = class(TConfirmableToolParams)
@@ -16,6 +17,7 @@ type
     FDraftId: string;
 
   public
+    [GraphId]
     [SchemaName('draft_id')]
     [SchemaDescription('Id of the draft, from mail_create_draft or one of the reply and forward draft tools')]
     property DraftId: string read FDraftId write FDraftId;

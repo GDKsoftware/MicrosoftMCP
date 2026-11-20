@@ -5,7 +5,8 @@ interface
 uses
   MCPServer.Types,
   MSGraph.Graph.Contacts.Types,
-  MicrosoftMcp.Tools.Base;
+  MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   // A contact as a list shows it.
@@ -128,6 +129,7 @@ type
     FContactId: string;
 
   public
+    [GraphId]
     [SchemaName('contact_id')]
     [SchemaDescription('Id of the contact, from contacts_search')]
     property ContactId: string read FContactId write FContactId;
@@ -138,6 +140,7 @@ type
     FContactId: string;
 
   public
+    [GraphId]
     [SchemaName('contact_id')]
     [SchemaDescription('Id of the contact, from contacts_search')]
     property ContactId: string read FContactId write FContactId;

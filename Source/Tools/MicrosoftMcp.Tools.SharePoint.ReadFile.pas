@@ -10,7 +10,8 @@ uses
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Files.Types,
   MicrosoftMcp.Tools.SharePoint.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TSharePointReadFileParams = class(TSiteParams)
@@ -18,6 +19,7 @@ type
     FItemId: string;
 
   public
+    [GraphId]
     [SchemaName('item_id')]
     [SchemaDescription('Id of the file, from sharepoint_list_files or sharepoint_search_files')]
     property ItemId: string read FItemId write FItemId;

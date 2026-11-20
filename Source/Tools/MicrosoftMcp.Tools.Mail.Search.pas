@@ -7,6 +7,7 @@ uses
   MSGraph.Graph.Http,
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId,
   MicrosoftMcp.Tools.Mail.Types,
   MicrosoftMcp.Tools.Services.Interfaces;
 
@@ -22,7 +23,8 @@ type
     property Query: string read FQuery write FQuery;
 
     [Optional]
-    [SchemaDescription('Folder to search: inbox, archive, deleteditems, junkemail, drafts, sentitems or a folder id from mail_list_folders. Empty searches the whole mailbox')]
+    [GraphId]
+    [SchemaDescription('Folder to search: inbox, archive, deleteditems, junkemail, drafts, sentitems or a folder id from mail_list_folders. Empty searches the whole mailbox; for a shared mailbox it searches the inbox')]
     property Folder: string read FFolder write FFolder;
 
     [Optional]

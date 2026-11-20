@@ -5,7 +5,8 @@ interface
 uses
   MCPServer.Types,
   MSGraph.Graph.Calendar.Types,
-  MicrosoftMcp.Tools.Base;
+  MicrosoftMcp.Tools.Base,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TCalendarAttendeeItem = record
@@ -116,6 +117,7 @@ type
     FEventId: string;
 
   public
+    [GraphId]
     [SchemaName('event_id')]
     [SchemaDescription('Id of the event, from calendar_list or calendar_search')]
     property EventId: string read FEventId write FEventId;
@@ -127,6 +129,7 @@ type
     FEventId: string;
 
   public
+    [GraphId]
     [SchemaName('event_id')]
     [SchemaDescription('Id of the event, from calendar_list or calendar_search')]
     property EventId: string read FEventId write FEventId;

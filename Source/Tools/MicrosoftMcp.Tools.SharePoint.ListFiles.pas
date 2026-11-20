@@ -9,7 +9,8 @@ uses
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Files.Types,
   MicrosoftMcp.Tools.SharePoint.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TSharePointListFilesParams = class(TSiteParams)
@@ -18,6 +19,7 @@ type
 
   public
     [Optional]
+    [GraphId]
     [SchemaName('folder_id')]
     [SchemaDescription('Id of the folder to list, from an earlier listing; empty lists the root of the document library')]
     property FolderId: string read FFolderId write FFolderId;

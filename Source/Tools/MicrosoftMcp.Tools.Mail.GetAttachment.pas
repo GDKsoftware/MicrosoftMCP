@@ -10,7 +10,8 @@ uses
   MicrosoftMcp.Mailbox.Resolver.Interfaces,
   MicrosoftMcp.Tools.Base,
   MicrosoftMcp.Tools.Mail.Types,
-  MicrosoftMcp.Tools.Services.Interfaces;
+  MicrosoftMcp.Tools.Services.Interfaces,
+  MicrosoftMcp.Tools.GraphId;
 
 type
   TMailGetAttachmentParams = class(TMessageParams)
@@ -18,6 +19,7 @@ type
     FAttachmentId: string;
 
   public
+    [GraphId]
     [SchemaName('attachment_id')]
     [SchemaDescription('Id of the attachment, from mail_list_attachments')]
     property AttachmentId: string read FAttachmentId write FAttachmentId;
