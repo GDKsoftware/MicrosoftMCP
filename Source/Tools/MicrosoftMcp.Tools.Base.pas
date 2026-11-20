@@ -72,8 +72,11 @@ type
     function PerformOnMailbox(const Params: TParams; const Mailbox: TResolvedMailbox; const UserId: string): TValue; virtual;
     function RunWithClient(const Params: TParams; const Mailbox: TResolvedMailbox): TValue;
 
-    // The client is owned by the base and freed after Run.
-    function Run(const Params: TParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TResponse; virtual; abstract;
+    // The client is owned by the base and freed after Run. A tool derives from this one or overrides RunValue.
+    function Run(const Params: TParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TResponse; virtual;
+
+    // For a tool whose answer is not just structured content, such as one that returns an embedded resource.
+    function RunValue(const Params: TParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TValue; virtual;
   end;
 
   // A mailbox tool that changes or sends something. Without a valid confirmation_token it only answers
@@ -170,10 +173,20 @@ function TMicrosoftTool<TParams, TResponse>.RunWithClient(const Params: TParams;
 begin
   const Graph = FServices.GraphClients.Create(Mailbox);
   try
-    Result := TToolSupport.ResponseValue(Run(Params, Mailbox, Graph));
+    Result := RunValue(Params, Mailbox, Graph);
   finally
     Graph.Free;
   end;
+end;
+
+function TMicrosoftTool<TParams, TResponse>.Run(const Params: TParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TResponse;
+begin
+  Result := nil;
+end;
+
+function TMicrosoftTool<TParams, TResponse>.RunValue(const Params: TParams; const Mailbox: TResolvedMailbox; const Graph: TGraphHttpClient): TValue;
+begin
+  Result := TToolSupport.ResponseValue(Run(Params, Mailbox, Graph));
 end;
 
 { TConfirmedMicrosoftTool<TParams, TResponse> }

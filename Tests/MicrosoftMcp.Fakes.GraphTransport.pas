@@ -26,6 +26,7 @@ type
 
     function RequestCount: Integer;
     function LastRequest: TGraphHttpRequest;
+    function RequestAt(const Index: Integer): TGraphHttpRequest;
 
     function Execute(const Request: TGraphHttpRequest): TGraphHttpResponse;
     function ExecuteBinary(const Request: TGraphHttpRequest): TGraphHttpResponse;
@@ -66,6 +67,11 @@ end;
 function TFakeGraphTransport.LastRequest: TGraphHttpRequest;
 begin
   Result := FRequests.Last;
+end;
+
+function TFakeGraphTransport.RequestAt(const Index: Integer): TGraphHttpRequest;
+begin
+  Result := FRequests[Index];
 end;
 
 function TFakeGraphTransport.Execute(const Request: TGraphHttpRequest): TGraphHttpResponse;

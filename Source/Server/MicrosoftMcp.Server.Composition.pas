@@ -36,6 +36,7 @@ type
     procedure BuildToolServices;
     procedure RegisterTools;
     procedure RegisterMailboxTools;
+    procedure RegisterMailTools;
     procedure BuildHost;
     procedure LogStarted;
 
@@ -74,7 +75,25 @@ uses
   MicrosoftMcp.Tools.Mailbox.List,
   MicrosoftMcp.Tools.Mailbox.Add,
   MicrosoftMcp.Tools.Mailbox.Rename,
-  MicrosoftMcp.Tools.Mailbox.Remove;
+  MicrosoftMcp.Tools.Mailbox.Remove,
+  MicrosoftMcp.Tools.Mail.Search,
+  MicrosoftMcp.Tools.Mail.List,
+  MicrosoftMcp.Tools.Mail.Read,
+  MicrosoftMcp.Tools.Mail.ListFolders,
+  MicrosoftMcp.Tools.Mail.ListAttachments,
+  MicrosoftMcp.Tools.Mail.GetAttachment,
+  MicrosoftMcp.Tools.Mail.CreateDraft,
+  MicrosoftMcp.Tools.Mail.UpdateDraft,
+  MicrosoftMcp.Tools.Mail.CreateReplyDraft,
+  MicrosoftMcp.Tools.Mail.CreateForwardDraft,
+  MicrosoftMcp.Tools.Mail.DeleteDraft,
+  MicrosoftMcp.Tools.Mail.SendDraft,
+  MicrosoftMcp.Tools.Mail.Send,
+  MicrosoftMcp.Tools.Mail.Forward,
+  MicrosoftMcp.Tools.Mail.Move,
+  MicrosoftMcp.Tools.Mail.MarkRead,
+  MicrosoftMcp.Tools.Mail.Delete,
+  MicrosoftMcp.Tools.Mail.GetSignature;
 
 const
   LoopbackAddress = '127.0.0.1';
@@ -200,6 +219,7 @@ begin
   // The host copies the tools of the global registry when it builds its managers, so every
   // TMCPRegistry.RegisterTool call belongs here, before BuildHost.
   RegisterMailboxTools;
+  RegisterMailTools;
 end;
 
 procedure TServerComposition.RegisterMailboxTools;
@@ -235,6 +255,119 @@ begin
     function: IMCPTool
     begin
       Result := TMailboxRemoveTool.Create(Services);
+    end);
+end;
+
+procedure TServerComposition.RegisterMailTools;
+begin
+  const Services = FToolServices;
+
+  TMCPRegistry.RegisterTool(TMailSearchTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailSearchTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailListTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailListTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailReadTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailReadTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailListFoldersTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailListFoldersTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailListAttachmentsTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailListAttachmentsTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailGetAttachmentTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailGetAttachmentTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailCreateDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailCreateDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailUpdateDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailUpdateDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailCreateReplyDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailCreateReplyDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailCreateForwardDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailCreateForwardDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailDeleteDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailDeleteDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailSendDraftTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailSendDraftTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailSendTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailSendTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailForwardTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailForwardTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailMoveTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailMoveTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailMarkReadTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailMarkReadTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailDeleteTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailDeleteTool.Create(Services);
+    end);
+
+  TMCPRegistry.RegisterTool(TMailGetSignatureTool.ToolName,
+    function: IMCPTool
+    begin
+      Result := TMailGetSignatureTool.Create(Services);
     end);
 end;
 
