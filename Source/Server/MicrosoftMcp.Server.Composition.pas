@@ -58,6 +58,9 @@ type
 
     // The port the endpoint actually uses; it differs from the settings when those were 0.
     function BoundPort: Word;
+
+    // The largest request body the endpoint accepts, in bytes.
+    function RequestBodyLimit: Integer;
   end;
 
 implementation
@@ -144,6 +147,9 @@ const
   ParamSeparator = ';';
   CharacterSetParameter = 'CharacterSet=';
   Utf8CharacterSet = 'CharacterSet=UTF8';
+  // onedrive_upload takes up to 10 MB, about 13.4 MB as base64 in a JSON-RPC request; the example nginx
+  // configuration in deploy/ allows the same 16 MB.
+  MaxRequestBodyBytes = 16 * 1024 * 1024;
 
 resourcestring
   StartedFormat = 'MicrosoftMCP started: resource %s on %s:%d, tokens from %s, store %s';
@@ -623,6 +629,7 @@ begin
   FHost.Settings.AuthorizationServers := FSettings.AuthIssuer;
   FHost.Settings.ResourceUri          := FSettings.ResourceUri;
   FHost.Settings.RequestStateKey      := RequestStateKey;
+  FHost.Settings.MaxRequestBodyBytes  := MaxRequestBodyBytes;
 
   FHost.Authorizer := TMCPAuthClient.CreateAuthorizer(FSettings.ResourceUri,
                                                       FSettings.AuthInternalUrl,
@@ -651,6 +658,11 @@ end;
 function TServerComposition.IsRunning: Boolean;
 begin
   Result := FIsRunning;
+end;
+
+function TServerComposition.RequestBodyLimit: Integer;
+begin
+  Result := FHost.Settings.MaxRequestBodyBytes;
 end;
 
 function TServerComposition.BoundPort: Word;

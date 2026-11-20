@@ -43,6 +43,7 @@ journalctl -u microsoftmcp -f
 
 - The program listens on `127.0.0.1` only. nginx publishes just `/mcp` and the protected-resource metadata; nothing else of the server is reachable from outside.
 - The unit runs as its own user, with `NoNewPrivileges` and `ProtectSystem=strict`. The program writes nothing to disk, so it needs no writable paths. The log goes to standard output and so to the journal.
+- `onedrive_upload` accepts files up to 10 MB. They travel as base64 in the request, so the server accepts request bodies up to 16 MB and the example site sets `client_max_body_size 16m` for `/mcp`; nginx would refuse anything over 1 MB otherwise.
 - SIGTERM stops the endpoint and the maintenance thread before the process exits.
 - The `location ^~ /.well-known/oauth-protected-resource` prefix covers the metadata path `/.well-known/oauth-protected-resource/mcp` that clients derive from the resource URI. When the resource URI has another path, the metadata path follows it and the prefix still matches.
 - Pending confirmations live in memory. A restart cancels them; the assistant asks again.

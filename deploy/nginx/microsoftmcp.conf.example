@@ -14,6 +14,8 @@ server {
         proxy_set_header Connection "";
         proxy_buffering off;
         proxy_read_timeout 3600s;
+        # onedrive_upload accepts files up to 10 MB, sent as base64; the server itself allows 16 MB.
+        client_max_body_size 16m;
     }
 
     # Protected-resource metadata; the path after the prefix is the path of the resource URI.

@@ -32,6 +32,9 @@ type
 
     [Test]
     procedure StopClosesTheEndpoint;
+
+    [Test]
+    procedure RequestBodyLimitFitsTheLargestUpload;
   end;
 
 implementation
@@ -39,7 +42,8 @@ implementation
 uses
   System.SysUtils,
   System.Classes,
-  System.JSON;
+  System.JSON,
+  MicrosoftMcp.Tools.Files.Support;
 
 const
   ResourceUri = 'https://mcp.example.test/mcp';
@@ -118,6 +122,14 @@ begin
   FComposition.Stop;
 
   Assert.IsFalse(FComposition.IsRunning);
+end;
+
+// onedrive_upload accepts 10 MB, which is about 13.4 MB as base64 inside the JSON-RPC request.
+procedure TServerCompositionTests.RequestBodyLimitFitsTheLargestUpload;
+begin
+  const Base64Bytes = ((TFilesSupport.MaximumBytes + 2) div 3) * 4;
+
+  Assert.IsTrue(FComposition.RequestBodyLimit > Base64Bytes, Format('Limit %d, base64 upload %d', [FComposition.RequestBodyLimit, Base64Bytes]));
 end;
 
 end.
